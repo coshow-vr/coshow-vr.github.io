@@ -1299,8 +1299,7 @@ document.getElementById('bTour').onclick = () => {
 
 /* ---------- 미니맵 ---------- */
 const mini = document.getElementById('mini'), mg = mini.getContext('2d');
-const ABBR = { '그린바이오': '그바', '에너지신산업': '에너지', '에코업': '에코', '이차전지': '이차', '반도체소부장': '소부장', '첨단소재나노융합': '나노', '미래자동차': '자동차', '데이터보안활용융합': '보안', '차세대통신': '통신', '사물인터넷': '사물',
-  '바이오헬스': '바헬', '차세대디스플레이': '디플', '차세대반도체': '반도체', '지능형로봇': '로봇', '항공드론': '드론', '실감미디어': '미디어', '빅데이터': '빅데', '인공지능': 'AI' };   // 미니맵 줄임말
+const ABBR = { '그린바이오': '그바', '에너지신산업': '에너지', '에코업': '에코업', '이차전지': '이차전지', '반도체소부장': '반소', '첨단소재나노융합': '첨단', '미래자동차': '미래차', '데이터보안활용융합': '데이터', '차세대통신': '차통', '사물인터넷': '사물', '바이오헬스': '바이오', '차세대디스플레이': '차디', '차세대반도체': '차반', '지능형로봇': '로봇', '항공드론': '드론', '실감미디어': '실감', '빅데이터': '빅데', '인공지능': '인공' };   // 미니맵 줄임말
 const MB_ALL = { x0: -80, x1: 115, z0: -66, z1: 80 }, MB_HALL = { x0: -73, x1: 73, z0: -63, z1: 1.5 }; let MB = MB_ALL;   // 전시장 안 = 전시장 크게
 const m2 = (x, z) => [(x - MB.x0) / (MB.x1 - MB.x0) * mini.width, (z - MB.z0) / (MB.z1 - MB.z0) * mini.height];
 function rectM(x0, x1, z0, z1, c) { const [a, b] = m2(x0, z0), [d, e] = m2(x1, z1); mg.fillStyle = c; mg.fillRect(a, b, d - a, e - b); }
@@ -1386,7 +1385,8 @@ manager.onLoad = hideLoad; setTimeout(hideLoad, 9000);
 birdOnly.visible = true;
 // 주소 끝 #t3 → 투어 3번째 자리, #expo → 구역 (공유·확인용)
 (function () { const h = location.hash.slice(1);
-  if (!h) { setMode('walk'); player.x = MG.cx + Math.min(18, Math.max(10, 3.8 / (Math.tan(camera.fov * Math.PI / 360) * camera.aspect))); player.z = MG.cz; [player.yaw, player.pitch] = lookYawPitch(player.x, 1.65, MG.cz, MG.cx + 0.8, 2.6, MG.cz); applyWalkCam(); return; }   // 처음 = 키네틱 LED 앞 const m = h.match(/^t(\d+)$/);
+  if (!h) { setMode('walk'); player.x = MG.cx + Math.min(18, Math.max(10, 3.8 / (Math.tan(camera.fov * Math.PI / 360) * camera.aspect))); player.z = MG.cz; [player.yaw, player.pitch] = lookYawPitch(player.x, 1.65, MG.cz, MG.cx + 0.8, 2.6, MG.cz); applyWalkCam(); return; }   // 처음 = 키네틱 LED 앞
+  const m = h.match(/^t(\d+)$/);
   if (m && TOUR[+m[1]]) { const [p, l, t, s] = TOUR[+m[1]]; setMode('walk'); player.x = p[0]; player.z = p[1]; [player.yaw, player.pitch] = lookYawPitch(p[0], 1.65, p[1], ...l); applyWalkCam(); showCap(t, s); hideHint(); }
   else if (/^b=/.test(h)) { const sel = document.getElementById('selB'); sel.value = decodeURIComponent(h.slice(2)); sel.onchange(); }   // #b=부스이름 → 그 부스 앞으로
   else if (/^w=/.test(h)) { const [x, z, lx, ly, lz] = h.slice(2).split(',').map(Number); setMode('walk'); player.x = x; player.z = z; [player.yaw, player.pitch] = lookYawPitch(x, 1.65, z, lx, ly, lz); applyWalkCam(); hideHint(); }   // #w=서있는x,z,볼x,y,z
