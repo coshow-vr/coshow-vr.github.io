@@ -67,9 +67,9 @@ button.cy{background:linear-gradient(90deg,#1b6dff,#22c8ff)}
 #vrslot button{background:linear-gradient(90deg,#7b2cff,#ff3d9a)}
 @media(max-width:600px){
  header b{font-size:15px} header img{width:38px;height:38px}
- #modes{left:12px;right:0;top:calc(84px + env(safe-area-inset-top));flex-direction:row;align-items:center;flex-wrap:nowrap;overflow-x:auto;touch-action:pan-x;padding-right:12px}
- #modes button,#zones button,#selB{white-space:nowrap;font-size:12px;padding:8px 11px;flex:none}
- .grp{flex-direction:row;align-items:center;padding:4px 6px;flex:none} .grp small{display:none}
+ #modes{left:12px;right:12px;top:calc(84px + env(safe-area-inset-top));flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px}
+ #modes button,#zones button,#selB{white-space:nowrap;font-size:12px;padding:7px 10px;flex:none}
+ .grp{flex-direction:row;align-items:center;padding:4px 6px;flex:none;gap:6px} .grp small{font-size:10px;margin:0 2px 0 4px;white-space:nowrap}
  #zones{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;touch-action:pan-x;right:0;padding-right:12px}
  #mini{width:118px;height:104px;top:calc(128px + env(safe-area-inset-top))}
  #note{top:calc(58px + env(safe-area-inset-top))}
@@ -112,6 +112,6 @@ button.cy{background:linear-gradient(90deg,#1b6dff,#22c8ff)}
 <div id="lb"><img alt=""></div>
 <div id="load"><div><img src="badge.png" alt=""><br>공간을 짓는 중…<small>처음 한 번은 조금 걸려요</small></div></div>
 
-<script type="module" src="tour.js?v=11"></script>
+<script type="module" src="tour.js?v=12"></script>
 </body>
 </html>

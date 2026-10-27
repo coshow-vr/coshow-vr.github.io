@@ -1234,7 +1234,9 @@ document.getElementById('bGal').onclick = () => {
     let z = fz + 4.5 * dir; for (const o of [4.5, 3.5, 5.5, 2.5]) { if (walkable(fx, fz + o * dir)) { z = fz + o * dir; break; } }
     stopTour(); goWalk(fx, z, [fx, 2.2, fz - 9 * dir], 2.2); showCap(b.name + ' 부스', '컨소시엄 바로 가기');
   }; }
-const placeMini = () => { const mini = document.getElementById('mini'); if (innerWidth > 600) mini.style.top = (document.getElementById('modes').getBoundingClientRect().bottom + 8) + 'px'; else mini.style.top = ''; };
+const placeMini = () => {                                                      // 미니맵은 단추 묶음 바로 아래, 폰에선 자막도 그 아래
+  const mini = document.getElementById('mini'), y = document.getElementById('modes').getBoundingClientRect().bottom + 8; mini.style.top = y + 'px';
+  document.getElementById('cap').style.top = innerWidth > 600 ? '' : (y + mini.offsetHeight + 8) + 'px'; };
 placeMini(); addEventListener('resize', placeMini);
 
 /* ---------- 화질 바꾸기 (다시 불러옴) ---------- */
