@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>2026 CO-SHOW 가상 투어</title>
+<meta name="description" content="제3회 CO-SHOW 공간조성 3D 가상 투어 · 2026. 11. 18.(수) ~ 21.(토) · 광주 김대중컨벤션센터">
+<meta property="og:title" content="2026 CO-SHOW 가상 투어">
+<meta property="og:description" content="로비 · 전시장 · 다목적홀 공간조성 3D 둘러보기">
+<meta property="og:image" content="img/n_maingate_03.jpg">
+<link rel="icon" href="badge.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSans.css">
+<style>
+@font-face{font-family:GmarketSans;font-weight:700;src:url(https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff) format('woff')}
+@font-face{font-family:GmarketSans;font-weight:500;src:url(https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff) format('woff')}
+:root{--navy:#0b1440;--ink:#111a3a;--cyan:#2fe4ff;--red:#e8192c;--yel:#f5b800}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b1440;font-family:GmarketSans,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#fff;touch-action:none;user-select:none}
+#app{position:fixed;inset:0}
+canvas{display:block}
+header{position:fixed;left:12px;top:calc(10px + env(safe-area-inset-top));display:flex;align-items:center;gap:10px;pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.45)}
+header img{width:44px;height:44px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
+header b{display:block;font-size:17px;font-weight:700;letter-spacing:-.3px}
+header span{display:block;font-size:11px;font-weight:500;opacity:.92;margin-top:3px}
+.bar{position:fixed;display:flex;gap:6px;flex-wrap:wrap}
+#zones{left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));justify-content:center}
+#modes{right:12px;top:calc(12px + env(safe-area-inset-top));flex-direction:column;align-items:flex-end}
+button{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:999px;padding:9px 14px;background:rgba(11,20,64,.78);color:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer}
+button.on{background:#fff;color:var(--navy)}
+.grp{display:flex;flex-direction:column;align-items:flex-end;gap:5px;background:rgba(11,20,64,.45);padding:6px 8px 8px;border-radius:18px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.grp small{font-size:11px;font-weight:700;letter-spacing:.3px;opacity:.92;margin-right:6px}
+.grp .row{display:flex;gap:6px}
+#selB{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:999px;padding:9px 12px;background:rgba(11,20,64,.78);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer;max-width:220px}
+#selB option{color:#0b1440;background:#fff}
+button.cy{background:linear-gradient(90deg,#1b6dff,#22c8ff)}
+#mini{position:fixed;right:12px;top:calc(262px + env(safe-area-inset-top));width:220px;height:194px;border-radius:12px;background:rgba(11,20,64,.72);box-shadow:0 2px 10px rgba(0,0,0,.3)}
+#joy{position:fixed;left:22px;bottom:calc(70px + env(safe-area-inset-bottom));width:116px;height:116px;border-radius:50%;background:rgba(11,20,64,.35);border:2px solid rgba(255,255,255,.45);display:none}
+#knob{position:absolute;left:38px;top:38px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.85)}
+#cap{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top));transform:translateX(-50%);background:rgba(11,20,64,.82);padding:10px 16px;border-radius:14px;font-size:14px;font-weight:700;max-width:86vw;text-align:center;display:none;line-height:1.45}
+#cap small{display:block;font-weight:500;font-size:12px;opacity:.85;margin-top:2px}
+#hint{position:fixed;left:50%;bottom:calc(62px + env(safe-area-inset-bottom));transform:translateX(-50%);font-size:12px;font-weight:500;background:rgba(0,0,0,.45);padding:6px 12px;border-radius:999px;white-space:nowrap;transition:opacity .6s}
+#note{position:fixed;left:12px;top:calc(64px + env(safe-area-inset-top));font-size:10px;font-weight:500;opacity:.75;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+#sheet{position:fixed;left:0;right:0;bottom:0;max-height:78vh;background:#fff;color:var(--ink);border-radius:18px 18px 0 0;transform:translateY(calc(100% + 60px));transition:transform .3s ease;box-shadow:0 -6px 30px rgba(0,0,0,.35);display:flex;flex-direction:column;z-index:5}
+#sheet.open{transform:none}
+@media(min-width:900px){#sheet{left:auto;right:16px;bottom:16px;width:440px;border-radius:18px;max-height:84vh}}
+#sheet .hd{display:flex;align-items:center;gap:10px;padding:16px 16px 6px}
+#sheet .no{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px}
+#sheet h3{margin:0;font-size:18px;letter-spacing:-.4px;flex:1}
+#sheet .x{background:#eef0f6;color:#333;padding:7px 11px;box-shadow:none}
+#sheet .zone{font-size:11px;font-weight:700;color:#4a5aa0;padding:0 16px}
+#sheet .desc{font-size:13px;font-weight:500;line-height:1.6;padding:6px 16px 10px;color:#2a3150}
+#sheet .imgs{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 16px 10px;touch-action:pan-x}
+#sheet .imgs figure{margin:0;flex:none;width:86%;scroll-snap-align:start}
+#sheet .imgs img{width:100%;border-radius:10px;display:block;background:#dde}
+#sheet .imgs figcaption{font-size:11px;font-weight:500;color:#667;margin-top:4px}
+#sheet .ft{display:flex;gap:8px;padding:6px 16px calc(16px + env(safe-area-inset-bottom))}
+#sheet .ft button{flex:1;background:var(--navy)}
+#sheet .src{font-size:10px;font-weight:500;color:#889;padding:0 16px 4px}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;z-index:9;align-items:center;justify-content:center;touch-action:pinch-zoom}
+#lb img{max-width:100vw;max-height:92vh}
+#lb.open{display:flex}
+#load{position:fixed;inset:0;display:grid;place-items:center;background:#0b1440;z-index:10;transition:opacity .6s}
+#load div{text-align:center;font-weight:700}
+#load img{width:110px;animation:p 1.6s ease-in-out infinite}
+@keyframes p{50%{transform:scale(1.06)}}
+#load small{display:block;font-weight:500;opacity:.7;margin-top:8px;font-size:12px}
+#vrslot button{background:linear-gradient(90deg,#7b2cff,#ff3d9a)}
+@media(max-width:600px){
+ header b{font-size:15px} header img{width:38px;height:38px}
+ #modes{left:12px;right:0;top:calc(84px + env(safe-area-inset-top));flex-direction:row;align-items:center;flex-wrap:nowrap;overflow-x:auto;touch-action:pan-x;padding-right:12px}
+ #modes button,#zones button,#selB{white-space:nowrap;font-size:12px;padding:8px 11px;flex:none}
+ .grp{flex-direction:row;align-items:center;padding:4px 6px;flex:none} .grp small{display:none}
+ #zones{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;touch-action:pan-x;right:0;padding-right:12px}
+ #mini{width:118px;height:104px;top:calc(128px + env(safe-area-inset-top))}
+ #note{top:calc(58px + env(safe-area-inset-top))}
+ #hint{font-size:11px}
+ #cap{top:calc(134px + env(safe-area-inset-top));font-size:13px}
+}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="app"></div>
+<header><img src="badge.png" alt=""><div><b>2026 CO-SHOW 가상 투어</b><span>2026. 11. 18.(수) ~ 21.(토) · 광주 김대중컨벤션센터</span></div></header>
+<div id="note">1027 전시장 시안 기준 개략 배치 · 실제와 다를 수 있음</div>
+<div id="modes" class="bar">
+  <div class="grp"><small>VIEW 모드 변경</small><div class="row">
+    <button id="bBird" class="on">🛰 조감</button>
+    <button id="bWalk">🚶 걷기</button>
+    <button id="bTour" class="cy">▶ 자동 투어</button>
+  </div></div>
+  <button id="bGal">🖼 시안 모아보기</button>
+  <button id="bLight">💡 전시장 조명 켜기</button>
+  <button id="bQ">✨ 고화질</button>
+  <select id="selB"><option value="">🏢 컨소시엄 바로 가기</option></select>
+  <span id="vrslot"></span>
+</div>
+<canvas id="mini" width="440" height="388"></canvas>
+<div id="zones" class="bar">
+  <button data-z="all" class="on">전체</button>
+  <button data-z="lobby">로비</button>
+  <button data-z="expo">전시장</button>
+  <button data-z="hall1">다목적홀1</button>
+  <button data-z="hall2">다목적홀2</button>
+</div>
+<div id="joy"><div id="knob"></div></div>
+<div id="cap"></div>
+<div id="hint">드래그로 돌려 보기 · 번호를 누르면 시안이 열려요</div>
+<div id="sheet"><div class="hd"><div class="no"></div><h3></h3><button class="x">닫기</button></div><div class="zone"></div><div class="desc"></div><div class="imgs"></div><div class="src"></div><div class="ft"><button id="bGo">🚶 여기로 걸어가기</button></div></div>
+<div id="lb"><img alt=""></div>
+<div id="load"><div><img src="badge.png" alt=""><br>공간을 짓는 중…<small>처음 한 번은 조금 걸려요</small></div></div>
+
+<script type="module" src="tour.js?v=11"></script>
+</body>
+</html>
