@@ -780,6 +780,7 @@ expoGate(GC.C, 'C', tex('tex/g_c_l.jpg'), tex('tex/g_c_r.jpg'), 1);
 /* ---------- 04 메인게이트 · COSS GATE (10. 21.) ---------- */
 // 폭 17,000 · 휘어짐 5,150 · 높이 5,000(보 1,200) · 키네틱 LED 5,796 × 2,415 · 깃발 730 × 1,650 × 18
 const kinTex = canvasTex(1160, 484, () => {});
+const KX = 16, KY = 6, KIN = [], kinW = (i, j, t) => i * 0.5 + j * 0.35 - t * 1.8;   // 키네틱 판 (가로 16 · 세로 6, 유나 판단)
 const badgeImg = new Image(); badgeImg.src = 'badge.png';
 function drawKinetic(t) {
   // 시안(메인게이트 투시도): 남보라 바탕 · 왼쪽 행사 글자 · 오른쪽 CO SHOW 방패 · 떠 있는 아이콘 · 아래 주최 표시, 위에 키네틱 판 움직임
@@ -794,9 +795,8 @@ function drawKinetic(t) {
   g.save(); g.font = `900 italic 92px ${FONT}`; g.lineWidth = 10; g.strokeStyle = '#2b3fd0'; g.strokeText('CO-SHOW', lx, h * .52); g.fillStyle = '#fff'; g.fillText('CO-SHOW', lx, h * .52); g.restore();
   g.fillStyle = '#fff'; g.font = `700 30px ${FONT}`; g.fillText('2026. 11. 18.(수) ~ 11. 21.(토)', lx, h * .68); g.font = `600 26px ${FONT}`; g.fillText('김대중컨벤션센터', lx, h * .77);
   g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `600 20px ${FONT}`; g.fillText('교육부   ·   한국연구재단   ·   첨단분야 혁신융합대학 사업단 협의회', w * .5, h * .93);
-  const nx = 24, ny = 10, cw = w / nx, ch = h / ny;                            // 키네틱 판 (판마다 기울기 바뀌며 빛 흐름)
-  for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) { const v = Math.sin(i * 0.42 - t * 1.6 + j * 0.25); g.fillStyle = v > 0 ? `rgba(255,255,255,${v * 0.1})` : `rgba(0,0,20,${-v * 0.22})`; g.fillRect(i * cw, j * ch, cw, ch); }
-  g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 2; for (let i = 0; i <= nx; i++) { g.beginPath(); g.moveTo(i * cw, 0); g.lineTo(i * cw, h); g.stroke(); } for (let j = 0; j <= ny; j++) { g.beginPath(); g.moveTo(0, j * ch); g.lineTo(w, j * ch); g.stroke(); }
+  const cw = w / KX, ch = h / KY;                                              // 판 밝기 = 판이 앞으로 나올수록 밝게
+  for (let i = 0; i < KX; i++) for (let j = 0; j < KY; j++) { const v = Math.sin(kinW(i, KY - 1 - j, t)); g.fillStyle = v > 0 ? `rgba(255,255,255,${v * 0.14})` : `rgba(0,0,20,${-v * 0.3})`; g.fillRect(i * cw, j * ch, cw, ch); }
   kinTex.needsUpdate = true;
 }
 drawKinetic(0);
@@ -820,7 +820,12 @@ const arcD = z => 2 * MG.bulge * (z - MG.cz) / MG.half ** 2;           // dx/dz
   });
   // 가운데 상자 (6,400) + 키네틱 LED · 뒤 회색 시트 로고
   boxXZ(MG.cx - 0.8, MG.cx + 0.8, MG.cz - 3.2, MG.cz + 3.2, 5, blk);
-  { const k = new THREE.Mesh(new THREE.PlaneGeometry(5.796, 2.415), GLOW(kinTex, 1.0)); k.position.set(MG.cx + 0.81, 1.81, MG.cz); k.rotation.y = Math.PI / 2; scene.add(k); }   // 키네틱 LED 5,796 × 2,415
+  { const kg = new THREE.Group(), km = GLOW(kinTex, 1.0, { side: THREE.DoubleSide }), pw = 5.796 / KX, ph = 2.415 / KY; kg.position.set(MG.cx + 0.81, 1.81, MG.cz); kg.rotation.y = Math.PI / 2; scene.add(kg);   // 키네틱 LED 5,796 × 2,415
+    for (let i = 0; i < KX; i++) for (let j = 0; j < KY; j++) {
+      const geo = new THREE.PlaneGeometry(pw * 0.94, ph * 0.94), uv = geo.attributes.uv;
+      for (let n = 0; n < uv.count; n++) uv.setXY(n, (i + 0.03 + uv.getX(n) * 0.94) / KX, (j + 0.03 + uv.getY(n) * 0.94) / KY);
+      const m = new THREE.Mesh(geo, km); m.position.set(-5.796 / 2 + (i + 0.5) * pw, -2.415 / 2 + (j + 0.5) * ph, 0.1); m.userData.ij = [i, j]; kg.add(m); KIN.push(m);
+    } }
   { const n = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 2.02), GLOW(tex('img/b3d/mg_neon.jpg'), 1.4)); n.position.set(MG.cx + 0.82, 3.99, MG.cz); n.rotation.y = Math.PI / 2; scene.add(n); }   // 로고 네온사인 (시안 앞면도)
   const back = sign(['CO', 'SHOW'], 3.4, 2.6, { bg: '#12141c', fg: '#6b7180', size: 300 }); back.position.set(MG.cx - 0.81, 2.4, MG.cz); back.rotation.y = -Math.PI / 2; scene.add(back);
   // 기둥 2개
@@ -1062,7 +1067,7 @@ buildTruss();
 const P = 'img/';
 const S27 = '1027 전시장 시안 (공유 드라이브 26COSS)';
 const HOT = [
- { n: '04', c: 'r', t: '메인게이트 (COSS GATE) · 키네틱 LED', z: '로비 · GATE 1·2 안쪽', p: [MG.cx + 0.8, 6.6, MG.cz], st: [86, MG.cz], desc: '폭 17 m · 높이 5 m 휜 게이트. 가운데 키네틱 LED(5.8 × 2.4 m), 윗보 로고 네온사인, 컨소시엄 깃발 18개(0.73 × 1.65 m)', img: [['n_maingate_03', '투시도 1'], ['n_maingate_04', '투시도 2'], ['n_maingate_05', '뒷면 (회색 시트 로고)'], ['n_maingate_07', '앞면 치수'], ['n_maingate_09', '깃발 18개']], src: '04.로비 메인게이트 제작승인서_1021' },
+ { n: '04', c: 'r', t: '메인게이트 (COSS GATE) · 키네틱 LED', z: '로비 · GATE 1·2 안쪽', p: [MG.cx + 0.8, 6.6, MG.cz + 4.6], st: [86, MG.cz], desc: '폭 17 m · 높이 5 m 휜 게이트. 가운데 키네틱 LED(5.8 × 2.4 m), 윗보 로고 네온사인, 컨소시엄 깃발 18개(0.73 × 1.65 m)', img: [['n_maingate_03', '투시도 1'], ['n_maingate_04', '투시도 2'], ['n_maingate_05', '뒷면 (회색 시트 로고)'], ['n_maingate_07', '앞면 치수'], ['n_maingate_09', '깃발 18개']], src: '04.로비 메인게이트 제작승인서_1021' },
  { n: '03', c: 'r', t: '선수단 라운지 1 · AD카드 배부처', z: '로비 · 메인게이트 옆', p: [66, 5.6, 23.1], st: [66, 16.5], desc: '10 × 8 m. 경진대회 선수단 라운지와 AD카드 배부처, 원탁 12세트', img: [['n_lounge_03', '투시도'], ['n_lounge_06', '그래픽 (입구게이트 · 상부 간판)'], ['n_lounge_02', '로비 배치도']], src: '03.로비 선수단라운지 제작승인서_1021' },
  { n: '03', c: 'r', t: '선수단 라운지 2', z: '로비 · A홀 앞', p: [51.1, 5.6, 24.2], st: [51.1, 17], desc: '10 × 8 m. 가운데 5 m 입구 게이트, 원탁 12세트', img: [['n_lounge_07', '투시도'], ['n_lounge_10', '그래픽']], src: '03.로비 선수단라운지 제작승인서_1021' },
  { n: '01', c: 'r', t: '전시장 입구게이트 (A · B · C홀)', z: '로비 · 전시장 입구 3곳', p: [GC.B, 5.8, 9.4], more: [[GC.A, 5.8, 9.4], [GC.C, 5.8, 9.4]], st: [3, 16], desc: '폭 12.6 m · 높이 4 m, 안쪽 벽 6 m. 앞면 세로 그래픽, 안쪽 현황판 · 그래픽(4 × 3 m), 위 아크릴 네온 로고. A·C홀은 에스컬레이터 입구게이트 함께', img: [['n_expogate_03', 'A홀 투시도'], ['n_expogate_06', 'B홀 투시도'], ['n_expogate_09', 'C홀 투시도'], ['n_expogate_05', 'A홀 치수 · 그래픽'], ['n_expogate_08', 'B홀 치수 · 그래픽'], ['n_expogate_11', 'C홀 치수 · 그래픽'], ['n_expogate_02', '배치도']], src: '01.로비 입구게이트 구조물 제작승인서_1027' },
@@ -1240,8 +1245,8 @@ const placeMini = () => {                                                      /
 placeMini(); addEventListener('resize', placeMini);
 
 /* ---------- 화질 바꾸기 (다시 불러옴) ---------- */
-{ const bq = document.getElementById('bQ'); bq.textContent = LOW ? '🔅 저화질' : '✨ 고화질'; bq.title = '눌러서 ' + (LOW ? '고화질' : '저화질') + '로 바꾸기';
-  bq.onclick = () => { const n = LOW ? 'high' : 'low'; try { localStorage.setItem('cvr_q', n); } catch (e) {} const u = new URL(location.href); u.searchParams.set('q', n); location.replace(u.href); }; }
+[['qLow', 'low'], ['qHigh', 'high']].forEach(([id, n]) => { const b = document.getElementById(id); b.classList.toggle('on', Q === n);   // 지금 화질 = 흰 단추
+  b.onclick = () => { if (Q === n) return; try { localStorage.setItem('cvr_q', n); } catch (e) {} const u = new URL(location.href); u.searchParams.set('q', n); location.replace(u.href); }; });
 /* ---------- 전시장 조명 켜기 · 끄기 ---------- */
 let hallBright = false;
 document.getElementById('bLight').onclick = () => {
@@ -1299,6 +1304,13 @@ const ABBR = { '그린바이오': '그바', '에너지신산업': '에너지', '
 const MB_ALL = { x0: -80, x1: 115, z0: -66, z1: 80 }, MB_HALL = { x0: -73, x1: 73, z0: -63, z1: 1.5 }; let MB = MB_ALL;   // 전시장 안 = 전시장 크게
 const m2 = (x, z) => [(x - MB.x0) / (MB.x1 - MB.x0) * mini.width, (z - MB.z0) / (MB.z1 - MB.z0) * mini.height];
 function rectM(x0, x1, z0, z1, c) { const [a, b] = m2(x0, z0), [d, e] = m2(x1, z1); mg.fillStyle = c; mg.fillRect(a, b, d - a, e - b); }
+let MFS = {};                                                                  // 미니맵 글자 크기 (보기 범위마다 하나)
+function miniFs() {
+  const k = MB === MB_HALL ? 'h' : 'a'; if (MFS[k]) return MFS[k];
+  MFS[k] = Math.min(...booths.map(b => { const ww = m2(b.pts[1][0], 0)[0] - m2(b.pts[0][0], 0)[0], len = Math.abs(m2(0, b.pts[0][1])[1] - m2(0, b.pts[3][1])[1]) * 0.9, t = ABBR[b.name] || b.name;
+    return /^[A-Za-z]+$/.test(t) ? ww * 0.82 : Math.min(ww * 0.82, len / [...t].length); }));
+  return MFS[k];
+}
 function drawMini() {
   mg.clearRect(0, 0, mini.width, mini.height);
   { const pz0 = mode === 'walk' ? player.z : controls.target.z, px0 = mode === 'walk' ? player.x : controls.target.x; MB = pz0 < 3 && Math.abs(px0) < 75 ? MB_HALL : MB_ALL; }
@@ -1307,7 +1319,7 @@ function drawMini() {
   booths.forEach(b => {                                                        // 부스 줄임말 (1~3글자, 한 글자씩 세로로)
     const cx = b.pts.reduce((a, p) => a + p[0], 0) / 4, cz = b.pts.reduce((a, p) => a + p[1], 0) / 4, [u, v] = m2(cx, cz), ww = m2(b.pts[1][0], 0)[0] - m2(b.pts[0][0], 0)[0];
     const len = Math.abs(m2(0, b.pts[0][1])[1] - m2(0, b.pts[3][1])[1]) * 0.9, t = ABBR[b.name] || b.name, lat = /^[A-Za-z]+$/.test(t), ch = lat ? [t] : [...t];
-    const fs = lat ? Math.min(ww * 0.85 / (t.length * 0.62), len * 0.5) : Math.min(ww * 0.82, len / ch.length);
+    const fs = miniFs();
     mg.font = `900 ${fs}px ${FONT}`; mg.fillStyle = '#fff'; mg.strokeStyle = 'rgba(0,0,0,.6)'; mg.lineWidth = Math.max(2, fs * 0.16); mg.lineJoin = 'round'; mg.textAlign = 'center'; mg.textBaseline = 'middle';
     ch.forEach((c, i) => { const y = v + (i - (ch.length - 1) / 2) * fs; mg.strokeText(c, u, y); mg.fillText(c, u, y); });
   });
@@ -1339,13 +1351,13 @@ let last = performance.now(), kinT = 0;
 const perf = { n: 0, t0: 0, done: LOW };                                     // 고화질이 버거우면 (처음 8초 평균 20fps 미만) 저화질 권함
 renderer.setAnimationLoop((now) => {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (!perf.done && !document.getElementById('load')) { if (!perf.t0) perf.t0 = now; perf.n++; if (now - perf.t0 > 8000) { perf.done = true; if (perf.n / 8 < 20) { const t = document.createElement('div'); t.textContent = '화면이 끊기면 오른쪽 위 ✨ 고화질 단추를 눌러 저화질로 바꿔 보세요'; t.style.cssText = 'position:fixed;left:50%;top:70px;transform:translateX(-50%);background:rgba(11,20,64,.9);color:#fff;padding:10px 16px;border-radius:12px;font:600 14px ' + FONT + ';z-index:50'; document.body.appendChild(t); setTimeout(() => t.remove(), 7000); } } }
+  if (!perf.done && !document.getElementById('load')) { if (!perf.t0) perf.t0 = now; perf.n++; if (now - perf.t0 > 8000) { perf.done = true; if (perf.n / 8 < 20) { const t = document.createElement('div'); t.textContent = '화면이 끊기면 오른쪽 위 🔅 저화질 단추를 눌러 보세요'; t.style.cssText = 'position:fixed;left:50%;top:70px;transform:translateX(-50%);background:rgba(11,20,64,.9);color:#fff;padding:10px 16px;border-radius:12px;font:600 14px ' + FONT + ';z-index:50'; document.body.appendChild(t); setTimeout(() => t.remove(), 7000); } } }
   if (tw.on) { const k = Math.min(1, (now - tw.t0) / tw.dur); tw.f(ease(k)); if (k >= 1) { tw.on = false; tw.cb && tw.cb(); } }
   if (mode === 'walk' && !tw.on && !renderer.xr.isPresenting) {
     const f = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) - joy.y, s = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + joy.x;
     if (keys.ArrowLeft) player.yaw += 1.6 * dt; if (keys.ArrowRight) player.yaw -= 1.6 * dt;
     if (f || s || keys.ArrowLeft || keys.ArrowRight) {
-      const sp = (keys.ShiftLeft ? 14 : 7) * dt, sy = Math.sin(player.yaw), cy = Math.cos(player.yaw);
+      const sp = (keys.ShiftLeft ? 22 : 12) * dt, sy = Math.sin(player.yaw), cy = Math.cos(player.yaw);
       const nx = player.x + (-sy * f + cy * s) * sp, nz = player.z + (-cy * f - sy * s) * sp;
       if (walkable(nx, nz)) { player.x = nx; player.z = nz; } else if (walkable(nx, player.z)) player.x = nx; else if (walkable(player.x, nz)) player.z = nz;
       applyWalkCam();
@@ -1356,6 +1368,7 @@ renderer.setAnimationLoop((now) => {
     if (f || r) { stopTour(); const d = camera.position.distanceTo(controls.target), sp = Math.max(8, d * 0.7) * dt, fw = new THREE.Vector3(); camera.getWorldDirection(fw); fw.y = 0; fw.normalize(); const rt = new THREE.Vector3(-fw.z, 0, fw.x), mv = fw.multiplyScalar(f * sp).add(rt.multiplyScalar(r * sp)); controls.target.add(mv); camera.position.add(mv); }
   }
   if (mode === 'bird') controls.update();
+  KIN.forEach(m => { const [i, j] = m.userData.ij, a = kinW(i, j, kinT); m.position.z = 0.1 + 0.09 * Math.sin(a); m.rotation.x = 0.32 * Math.cos(a); });   // 키네틱 판 움직임
   kinT += dt; if (Math.floor(kinT * 12) !== Math.floor((kinT - dt) * 12)) drawKinetic(kinT);
   if (Math.floor(kinT * 4) !== Math.floor((kinT - dt) * 4)) drawSphere(kinT);
   if (Math.floor(kinT * 15) !== Math.floor((kinT - dt) * 15)) drawWave(kinT);
@@ -1372,7 +1385,8 @@ const hideLoad = () => { const l = document.getElementById('load'); if (l) { l.s
 manager.onLoad = hideLoad; setTimeout(hideLoad, 9000);
 birdOnly.visible = true;
 // 주소 끝 #t3 → 투어 3번째 자리, #expo → 구역 (공유·확인용)
-(function () { const h = location.hash.slice(1); if (!h) return; const m = h.match(/^t(\d+)$/);
+(function () { const h = location.hash.slice(1);
+  if (!h) { setMode('walk'); player.x = MG.cx + Math.min(18, Math.max(10, 3.8 / (Math.tan(camera.fov * Math.PI / 360) * camera.aspect))); player.z = MG.cz; [player.yaw, player.pitch] = lookYawPitch(player.x, 1.65, MG.cz, MG.cx + 0.8, 2.6, MG.cz); applyWalkCam(); return; }   // 처음 = 키네틱 LED 앞 const m = h.match(/^t(\d+)$/);
   if (m && TOUR[+m[1]]) { const [p, l, t, s] = TOUR[+m[1]]; setMode('walk'); player.x = p[0]; player.z = p[1]; [player.yaw, player.pitch] = lookYawPitch(p[0], 1.65, p[1], ...l); applyWalkCam(); showCap(t, s); hideHint(); }
   else if (/^b=/.test(h)) { const sel = document.getElementById('selB'); sel.value = decodeURIComponent(h.slice(2)); sel.onchange(); }   // #b=부스이름 → 그 부스 앞으로
   else if (/^w=/.test(h)) { const [x, z, lx, ly, lz] = h.slice(2).split(',').map(Number); setMode('walk'); player.x = x; player.z = z; [player.yaw, player.pitch] = lookYawPitch(x, 1.65, z, lx, ly, lz); applyWalkCam(); hideHint(); }   // #w=서있는x,z,볼x,y,z
