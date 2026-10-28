@@ -436,7 +436,7 @@ function addBooth([name, X0, X1, F0, F1, tile], row, idx) {
   for (let i = 0; i < ns; i++) instScreen.push([x0 + (i + 0.5) * w / ns, back - 0.35 * dir, row === 'T' ? 0 : Math.PI]);
   booths.push({ pts, name, tile, carpet });   // 부스 시안 보기는 뺌 (10. 27. 제욱님)
 }
-/* ---------- 컨소시엄 부스 3D (부스시안_1027 그림 보고 지음, 10. 27.) — 차세대반도체 · 지능형로봇 · 바이오헬스 ---------- */
+/* ---------- 컨소시엄 부스 3D (부스시안_1027 그림 보고 지음, 10. 27.) — 차세대반도체 · 지능형로봇 (바이오헬스는 10. 28. booths/bio.js로 다시 지음) ---------- */
 // 부스 안 좌표: x = 앞에서 들여다볼 때 오른쪽 +, z = 앞선 0 → 안쪽 -D. 앞쪽 구조물은 fr(앞선 기울기대로 돌린 묶음)에 둠
 const BZ = 0.5;                                                                // 부스 안 밝기 (부스 자체 조명)
 const B3 = n => tex(`img/b3d/${n}.jpg`);
@@ -468,14 +468,6 @@ function figure(p, x, z, m, s = 1) {                                            
   const c = new THREE.Mesh(new THREE.CapsuleGeometry(0.2 * s, 1.2 * s, 4, 10), m); c.position.set(x, 0.8 * s, z); p.add(c);
   const h = new THREE.Mesh(new THREE.SphereGeometry(0.13 * s, 12, 10), m); h.position.set(x, 1.62 * s, z); p.add(h);
 }
-const bioBurst = canvasTex(1024, 560, (c, w, h) => {                           // 바이오헬스 대형 LED (시안의 빛 번짐 화면)
-  const bg = c.createLinearGradient(0, 0, w, 0); bg.addColorStop(0, '#b0167a'); bg.addColorStop(.45, '#e8542a'); bg.addColorStop(1, '#6a2bd0'); c.fillStyle = bg; c.fillRect(0, 0, w, h);
-  c.globalCompositeOperation = 'lighter';
-  [['#ffd84a', .5, .48, .42], ['#3fd0ff', .2, .3, .3], ['#ff4fd8', .85, .62, .32], ['#ffffff', .52, .48, .14]].forEach(([col, x, y, r]) => { const gr = c.createRadialGradient(w * x, h * y, 0, w * x, h * y, w * r); gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = gr; c.fillRect(0, 0, w, h); });
-  c.globalAlpha = .18; c.strokeStyle = '#fff';
-  for (let i = 0; i < 46; i++) { const a = i / 46 * Math.PI * 2; c.lineWidth = 2 + (i % 4) * 3; c.beginPath(); c.moveTo(w * .52, h * .48); c.lineTo(w * .52 + Math.cos(a) * w, h * .48 + Math.sin(a) * w); c.stroke(); }
-  c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
-});
 const DETAIL = {
   '차세대반도체'(g, W, D, carpet, slope) {
     const k = boothKit(g, slope), fr = k.fr, blk = M(0x111318, { roughness: .45 }), wht = M(0xf3f5f9, { roughness: .6 }), blu = E(0x2f8bff, 2.4);
@@ -583,59 +575,11 @@ const DETAIL = {
     k.spot([3.5, 7.5, -9], [4.3, 0, -11.5], 0xe8f0ff, 160, 0.7);
     k.pool(4.3, -11.4, 5, 0x8fc0ff, 0.3); k.pool(0, -3, 4, 0x6fa8ff, 0.35); k.pool(-4, -13, 6, 0x7aa0ff, 0.2);
   },
-  '바이오헬스'(g, W, D, carpet, slope) {
-    const k = boothKit(g, slope), fr = k.fr, wh = M(0xf2f5fa, { roughness: .5 }), whE = M(0xf2f5fa, { roughness: .5, emissive: 0x8d98ab, emissiveIntensity: .55 }), gr = M(0x9aa1ad, { roughness: .35, metalness: .35 }), wl = E(0xeaf4ff, 1.8);
-    carpet.material = M(0x3d4453, { roughness: .95 });
-    const H = 3.3, blueC = M(0x1d2f9a, { roughness: .95 });
-    // 앞: 흰 머리 벽(바이오헬스 간판) · 대형 LED · 잔디 빈백 · 안내데스크
-    k.box(2 * W, 1.1, 0.5, whE, 0, -3.3, 3.4, fr);
-    k.pl(GLOW(B3('bio_head'), 0.9), 3.9, 0.95, 2.0, 3.95, -3.04, 0, fr);
-    const st = canvasTex(1024, 256, (c) => { c.fillStyle = '#1d2533'; c.font = `600 40px ${FONT}`; c.textBaseline = 'middle'; ['- Prescription Desk', '- Precision Health Screening Center', '- Mind-Body Wellness Center', '- Rehabilitation Medicine Center'].forEach((t, i) => c.fillText(t, 20, 36 + i * 60)); });
-    k.pl(new THREE.MeshBasicMaterial({ map: st, transparent: true, toneMapped: false, color: new THREE.Color().setScalar(0.9) }), 3.2, 0.8, -2.6, 3.95, -3.04, 0, fr);
-    [-1, 1].forEach(s => k.box(0.6, 4.5, 0.6, wh, s * (W - 0.3), -3.3, 0, fr));
-    const lx0 = 0.7, lx1 = W - 0.65, lxc = (lx0 + lx1) / 2;
-    k.box(lx1 - lx0 + 0.3, 3.4, 0.35, wh, lxc, -3.45, 0, fr); k.pl(GLOW(bioBurst, 1.25), lx1 - lx0, 3.0, lxc, 1.75, -3.26, 0, fr);
-    k.flat(M(0x2e7a3c, { roughness: .95 }), lx0, lx1, -3.0, -0.9, 0.06, fr);
-    k.beans([[lxc - 2, -1.5], [lxc - 0.9, -2.3], [lxc + 0.2, -1.4], [lxc + 1.3, -2.3], [lxc + 2.1, -1.5]], M(0x22267a, { roughness: .8 }));
-    const atom = canvasTex(256, 256, (c) => { c.fillStyle = '#7d8592'; c.fillRect(0, 0, 256, 256); c.strokeStyle = '#fff'; c.lineWidth = 9; for (let i = 0; i < 3; i++) { c.save(); c.translate(128, 128); c.rotate(i * Math.PI / 3); c.beginPath(); c.ellipse(0, 0, 92, 36, 0, 0, 7); c.stroke(); c.restore(); } c.fillStyle = '#fff'; c.beginPath(); c.arc(128, 128, 16, 0, 7); c.fill(); });
-    k.box(2.8, 1.05, 0.8, wh, -3.3, -4.9); [-3.95, -2.65].forEach(x => k.pl(M(0xffffff, { map: atom, roughness: .5 }), 0.72, 0.72, x, 0.55, -4.49));
-    k.flat(blueC, -4.6, -1.9, -4.2, -0.9, 0.05);
-    // 안: 가운데 홀(파란 카펫)을 세 센터 게이트가 둘러쌈
-    const IW = 2.6, G0 = -5.6, G1 = -15.2, gA = -8.9, gB = -11.9;
-    k.flat(blueC, -1.6, 1.6, -14.6, -5.9, 0.05);
-    [[-1.6, -1.56, -14.6, -5.9], [1.56, 1.6, -14.6, -5.9]].forEach(([a, b, c, d]) => k.flat(wl, a, b, c, d, 0.055));
-    const sgn = (t1, t2) => k.txt([t1, t2], 3.0, 0.62, { bg: '#7d8592', fg: '#fff', size: 80 }, 0.95);
-    [[-1, 'Rehabilitation Medicine Center', '재활의학센터'], [1, 'Precision Health Screening Center', '정밀건강검진센터']].forEach(([s, t1, t2]) => {
-      const x = s * IW, face = x - s * 0.16, ry = s < 0 ? Math.PI / 2 : -Math.PI / 2;
-      k.bxz(x - 0.15, x + 0.15, gA, G0, H, wh); k.bxz(x - 0.15, x + 0.15, G1, gB, H, wh); k.bxz(x - 0.15, x + 0.15, gB, gA, H - 2.6, gr, 2.6);
-      const sg = sgn(t1, t2); sg.position.set(face - s * 0.01, 2.95, (gA + gB) / 2); sg.rotation.y = ry; g.add(sg);
-      [gA, gB].forEach(z => k.box(0.05, 2.6, 0.05, wl, face, z, 0));
-      [(G0 + gA) / 2, (gB + G1) / 2].forEach(z => k.pl(GLOW(bioBurst, 1.0), 1.3, 0.75, face - s * 0.005, 1.8, z, ry));
-      k.bxz(s < 0 ? -W : IW, s < 0 ? -IW : W, G0, G0 + 0.3, H, wh);               // 방 앞 벽
-    });
-    k.bxz(-W, -1.5, G1 - 0.3, G1, H, wh); k.bxz(1.5, W, G1 - 0.3, G1, H, wh); k.bxz(-1.5, 1.5, G1 - 0.3, G1, H - 2.6, gr, 2.6);
-    k.pl(GLOW(B3('bio_well'), 0.95), 2.9, 0.3, 0, 2.95, G1 + 0.01); [-1.5, 1.5].forEach(x => k.box(0.05, 2.6, 0.05, wl, x, G1 + 0.02, 0));
-    // 둘레 흰 벽 + 방 안 초록 그래픽판
-    k.bxz(-W - 0.15, -W + 0.15, -D, -3.6, H, wh); k.bxz(W - 0.15, W + 0.15, -D, -3.6, H, wh); k.bxz(-W, W, -D - 0.2, -D, H, wh);
-    const gp = t => canvasTex(512, 300, (c, w, h) => { c.fillStyle = '#163a33'; c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 40); c.fill(); c.strokeStyle = '#2b5f55'; c.lineWidth = 6; c.stroke(); c.fillStyle = '#fff'; c.font = `700 40px ${FONT}`; c.textAlign = 'center'; c.fillText(t, w / 2, 80); c.fillStyle = 'rgba(255,255,255,.45)'; for (let i = 0; i < 4; i++) c.fillRect(90, 130 + i * 34, w - 180, 12); });
-    [[-1, -7.6, '재활 스포츠 챌린지'], [-1, -12.6, '처방 클리닉'], [1, -7.6, '체성분 데이터 분석'], [1, -12.6, '디지털 해부학 클리닉']].forEach(([s, z, t]) => k.pl(GLOW(gp(t), 0.8, { transparent: true }), 2.6, 1.5, s * (W - 0.16), 1.9, z, s < 0 ? Math.PI / 2 : -Math.PI / 2));
-    // 방 안 가구: 해부 테이블 · 해부 화면 · 의자 / 재활 매트 · 키오스크 / 웰니스 의자
-    k.box(0.9, 0.85, 2.0, M(0x07080c, { roughness: .3 }), W - 1.9, -10.4); k.pl(GLOW(B3('bio_anat'), 1.0), 2.0, 1.4, IW + 0.16, 1.9, -13.55, Math.PI / 2);
-    k.inst(CHAIR, M(0x1a1d26), [0, 1, 2].map(i => [IW + 0.9 + i * 0.75, 0, -6.6, Math.PI]));
-    k.flat(M(0x0c0d12), -W + 0.4, -IW - 0.4, -12.2, -9.0, 0.06);
-    k.box(0.6, 1.2, 0.5, wh, -IW - 0.8, -6.6); k.pl(GLOW(bioBurst, 0.9), 0.5, 0.36, -IW - 0.8, 1.0, -6.34);
-    k.flat(M(0x22267a, { roughness: .95 }), -W + 0.3, W - 0.3, -D + 0.3, G1 - 0.6, 0.05);
-    [-2.4, 0, 2.4].forEach(x => { k.box(0.8, 0.45, 1.0, wh, x, -19.5); const b = k.box(0.8, 0.8, 0.12, wh, x, -20.05, 0.45); b.rotation.x = -0.35; });
-    k.pl(GLOW(bioBurst, 1.0), 2.4, 1.35, 0, 1.9, -D + 0.01);
-    // 조명
-    k.spot([0, 8, 3.5], [0, 3.6, -3.3], 0xf2f6ff, 170, 0.5); k.spot([0, 8, -10], [0, 0, -10.5], 0xe6eeff, 120, 0.75);
-    k.pool(0, -10, 4, 0xa0c8ff, 0.25); k.pool(lxc, -1.8, 3.2, 0xffb0e0, 0.25);
-  },
 };
 // 부스 3D 나눠 짓기: site/booths/<키>.js 가 export default (api) => ({ '부스이름'(g, W, D, carpet, slope) {…} })
-const BOOTH_MODS = ['battery', 'bigdata', 'car', 'comm', 'display', 'drone', 'ecoup', 'energy', 'greenbio', 'iot', 'media', 'security', 'sobu', 'ai', 'nano'];
+const BOOTH_MODS = ['bio', 'battery', 'bigdata', 'car', 'comm', 'display', 'drone', 'ecoup', 'energy', 'greenbio', 'iot', 'media', 'security', 'sobu', 'ai', 'nano'];
 { const api = { THREE, M, E, B, IMG, GLOW, box, boxXZ, floorPlane, panel, canvasTex, textTex, sign, atlas, beam, pool, truss, pixWall, pixBlock, tex, B3, boothKit, figure, CHAIR, BEAN, FONT, LOW, TILE_COL, mergeGeometries };
-  const rs = await Promise.allSettled(BOOTH_MODS.map(k => import(`./booths/${k}.js?v=9`).catch(() => import(`./booths/${k}.js?v=9&r=1`))));   // 한 번 못 받으면 다시
+  const rs = await Promise.allSettled(BOOTH_MODS.map(k => import(`./booths/${k}.js?v=10`).catch(() => import(`./booths/${k}.js?v=10&r=1`))));   // 한 번 못 받으면 다시
   rs.forEach((r, i) => { if (r.status === 'fulfilled') { try { Object.assign(DETAIL, r.value.default(api)); } catch (e) { console.warn('부스', BOOTH_MODS[i], e); } } }); }
 TOP.forEach((b, i) => addBooth(b, 'T', i));
 BOT.forEach((b, i) => addBooth(b, 'B', i + 1));
@@ -1423,7 +1367,7 @@ const TOUR = [
   [[-20, -28.5], [-10.7, 0.6, CZ], '파레트 휴게공간', '06 내부 휴게공간'],
   [[-19.5, -27.4], [-11.5, 2.4, -17.5], '지능형로봇 부스', 'LED 아치 · 4족 로봇 경기장 · 교육석'],
   [[-28.2, -33.5], [-28.2, 3.2, -17], '차세대반도체 부스', 'POLARIS · LED 큐브 · VR 4D · MCU 경진대회'],
-  [[-57.5, -31.8], [-63.5, 2.4, -19], '바이오헬스 부스', '대형 LED · 세 센터 게이트'],
+  [[-57.5, -31.8], [-63.5, 2.4, -19], '바이오헬스 부스', '곡선 간판 · 곡선 LED · 처방 데스크 · 세 센터 게이트'],
   [[GC.C, -4], [GC.C, 2.5, 10], '전시장 C홀 → 로비', ''],
   [[-51.5, 15.5], [-57.1, 1.4, 15], '로고 조형물', '05 로고 조형물'],
   [[-53, 17], [-46.5, 2.3, 25], '다목적홀 입구게이트', '입구 IN · 출구 OUT'],
