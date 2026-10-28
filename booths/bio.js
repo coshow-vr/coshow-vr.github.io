@@ -205,7 +205,7 @@ export default ({ THREE, M, E, GLOW, canvasTex, B3, boothKit, CHAIR, FONT, LOW, 
     { const [ax, az] = P(140, 456), q = new THREE.Group(); q.position.set(ax, 0, az); g.add(q);
       box(0.6, 0.78, 1.7, blk, 0, 0, 0, q); box(0.95, 0.1, 2.1, blk, 0, 0, 0.78, q); const s = k.pl(GLOW(anatTex, 1.0), 0.86, 2.0, 0, 0.885, 0, 0, q); s.rotation.x = -Math.PI / 2; }
     [[122, 292, 0], [195, 310, 0.45], [255, 360, 0.6]].forEach(([a, b, r]) => { const [x, z] = P(a, b), q = new THREE.Group(); q.position.set(x, 0, z); q.rotation.y = r; g.add(q); box(1.2, 0.04, 0.6, whG, 0, 0, 1.02, q); [-0.55, 0.55].forEach(o => box(0.05, 1.02, 0.55, whG, o, 0, 0, q)); k.inst(CHAIR, blk, [-0.35, 0.35].map(o => [x + Math.cos(r) * o + Math.sin(r) * 0.6, 0, z - Math.sin(r) * o + Math.cos(r) * 0.6, r + Math.PI])); });
-    gpanel('디지털 해부학 클리닉', '아나토마', WW - 0.31, Z(456), -Math.PI / 2, 3.6, 1.9);
+    gpanel('디지털 해부학 클리닉', '아나토마지', WW - 0.31, Z(456), -Math.PI / 2, 3.6, 1.9);
     [-0.85, 0.85].forEach(o => k.pl(GLOW(B3('bio_anat2'), 1.0), 1.5, 0.76, WW - 0.32, 1.6, Z(456) + o, -Math.PI / 2));
     { const [q, L] = wallQ(P(205, 190), P(345, 350)); k.pl(GLOW(green('유전자 분석 클리닉', '구강세포 DNA 실험', 3.2, 1.6), 0.85, { transparent: true }), 3.2, 1.6, 0.2, 1.7, 0.085, 0, q); }
     tv(X(150), 1.9, Z(190) - 0.11, Math.PI, 1.1, 0.62);
