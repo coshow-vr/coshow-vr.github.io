@@ -1,143 +1,203 @@
-/* 에코업 부스 3D (부스시안_1027 ecoup_01·02·04·05·06·07·08·09·10·11 보고 지음, 10. 27.) */
-// 도면 ecoup_01 = 13,500 × 26,508 mm → 부스 칸(13.1 × 26.0 m)과 거의 같아 1 : 1로 옮김 (21.7 px = 1 m)
-export default ({ THREE, M, E, GLOW, box, canvasTex, B3, boothKit, CHAIR, FONT, LOW }) => {
-  // 물줄기 LED · 안내 LED 그림 (시안 화면을 보고 그림, 사람 있는 부분은 그리기)
-  const infoTex = canvasTex(1024, 1100, (c, w, h) => {
-    const bg = c.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#04103a'); bg.addColorStop(.6, '#0a2a8a'); bg.addColorStop(1, '#06205e'); c.fillStyle = bg; c.fillRect(0, 0, w, h);
-    for (let i = 0; i < 90; i++) { c.globalAlpha = .08 + Math.random() * .2; c.fillStyle = '#5fc8ff'; c.fillRect(Math.random() * w, 0, 1 + Math.random() * 3, h); }
-    c.globalAlpha = 1; c.globalCompositeOperation = 'lighter';
-    for (let k = 0; k < 3; k++) { c.strokeStyle = ['#2fd8ff', '#7fe8ff', '#1f7bff'][k]; c.lineWidth = 10 - k * 3; c.beginPath(); for (let x = 0; x <= w; x += 8) { const y = 760 + Math.sin(x * .008 + k) * 60 + k * 14; x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); }
-    [[220, 760, 120], [520, 740, 95]].forEach(([x, y, r]) => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, '#9fe3ff'); g.addColorStop(.7, '#2a8f6a'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); });
-    for (let i = 0; i < 40; i++) { c.strokeStyle = 'rgba(160,230,255,.5)'; c.lineWidth = 2; c.beginPath(); c.arc(Math.random() * w, 560 + Math.random() * 420, 4 + Math.random() * 16, 0, 7); c.stroke(); }
-    c.globalCompositeOperation = 'source-over'; c.fillStyle = '#fff'; c.textBaseline = 'top';
-    c.font = `700 34px ${FONT}`; c.fillText('첨단분야 혁신융합대학사업단', 70, 205);
-    c.font = `900 66px ${FONT}`; c.fillStyle = '#7ff0ff'; c.fillText("환경을 '업(業)'으로 만듭니다", 60, 268);
-    c.fillStyle = '#e8f4ff'; c.font = `500 31px ${FONT}`;
-    ['에코업 혁신융합대학사업단은', '물과 환경 분야의 융합 인재를 양성하고,', '지속가능한 미래사회를 위한 혁신 기술을 개발합니다.'].forEach((t, i) => c.fillText(t, 70, 380 + i * 46));
-    c.font = `600 26px ${FONT}`; c.textAlign = 'center';
-    ['물의 지속 가능한 보전', '자원순환', '오염방지 및 관리', '생물다양성 보전'].forEach((t, i) => { const x = 140 + i * 245; c.strokeStyle = '#9fe9ff'; c.lineWidth = 4; c.beginPath(); c.arc(x, 960, 34, 0, 7); c.stroke(); c.fillStyle = '#fff'; c.fillText(t, x, 1010); });
+/* 에코업 부스 3D — 10. 28. 새 시안(첨부 2026-10-28/131627_1~13, 담당자 수정 요청) 보고 처음부터 다시 지음 */
+// 평면 = 2번 그림(13,500 × 26,508 mm)을 1.3배로 자른 것(_work/build_ecoup_1028.py 옆 메모): 가로 135~625 px = 부스 폭, 세로 108 px = 뒤 · 1052 px = 앞
+// 앞판(10. 27. 옛 시안) _work/이전판/ecoup_v1027_새시안전.js. 화면 그림 img/b3d/ecoup2_*.jpg = 시안에서 잘라 붙임
+export default ({ THREE, M, E, GLOW, box, canvasTex, B3, boothKit, truss, figure, CHAIR, FONT }) => {
+  const BLUE = '#0b3fae';
+  const mark = (c, x, y, s, col) => {                                           // 손 위 지구 로고 (시안 모양 따라 그림)
+    c.save(); c.strokeStyle = col; c.lineWidth = s * 0.07; c.lineCap = 'round';
+    const gy = y - s * 0.12, r = s * 0.3;
+    c.beginPath(); c.arc(x, gy, r, 0, 7); c.stroke();
+    c.beginPath(); c.ellipse(x, gy, r * 0.45, r, 0, 0, 7); c.stroke();
+    c.beginPath(); c.moveTo(x, gy - r); c.lineTo(x, gy + r); c.moveTo(x - r, gy); c.lineTo(x + r, gy); c.moveTo(x - r * 0.87, gy - r * 0.5); c.lineTo(x + r * 0.87, gy - r * 0.5); c.moveTo(x - r * 0.87, gy + r * 0.5); c.lineTo(x + r * 0.87, gy + r * 0.5); c.stroke();
+    c.beginPath(); c.moveTo(x - s * 0.62, y + s * 0.12); c.lineTo(x - s * 0.35, y + s * 0.12); c.quadraticCurveTo(x - s * 0.1, y + s * 0.42, x + s * 0.28, y + s * 0.34); c.quadraticCurveTo(x + s * 0.5, y + s * 0.28, x + s * 0.5, y + s * 0.04); c.stroke();
+    c.restore();
+  };
+  const T = (c, s, x, y, font, col, al = 'center') => { c.font = font; c.fillStyle = col; c.textAlign = al; c.textBaseline = 'middle'; c.fillText(s, x, y); };
+  const faceLogo = canvasTex(1024, 480, (c, w, h) => { c.fillStyle = BLUE; c.fillRect(0, 0, w, h); c.strokeStyle = '#fff'; c.lineWidth = 18; c.strokeRect(9, 9, w - 18, h - 18); mark(c, w / 2, 150, 190, '#fff'); T(c, '에코업(業)', w / 2, 345, `900 150px ${FONT}`, '#fff'); });
+  const faceProg = canvasTex(1024, 480, (c, w, h) => { c.fillStyle = BLUE; c.fillRect(0, 0, w, h / 2); c.fillStyle = '#fff'; c.fillRect(0, h / 2, w, h / 2); c.strokeStyle = '#fff'; c.lineWidth = 18; c.strokeRect(9, 9, w - 18, h - 18); T(c, '정수기 만들기', w / 2, h * 0.26, `800 118px ${FONT}`, '#fff'); T(c, '무드등 만들기', w / 2, h * 0.75, `800 118px ${FONT}`, BLUE); });
+  const plateTex = canvasTex(512, 160, (c, w, h) => {                           // 검은 반짝이 판 + 로고
+    c.fillStyle = '#0c0e14'; c.fillRect(0, 0, w, h); for (let i = 0; i < 900; i++) { c.fillStyle = `rgba(200,210,230,${Math.random() * .35})`; c.fillRect(Math.random() * w, Math.random() * h, 1.5, 1.5); }
+    mark(c, 110, 84, 82, '#fff'); T(c, '에코업(業)', 300, 84, `800 64px ${FONT}`, '#fff');
   });
-  const cycleTex = canvasTex(1536, 1024, (c, w, h) => {                       // 「물의 순환」 LED (3칸)
+  const deskTex = canvasTex(2048, 400, (c, w, h) => { c.fillStyle = '#f6f8fc'; c.fillRect(0, 0, w, h); T(c, '안내 / Information', w * 0.42, h * 0.3, `600 50px ${FONT}`, '#2a3040'); T(c, '더러운 물은 어디로 갔지?', w * 0.5, h * 0.62, `800 112px ${FONT}`, '#0d3ea8'); });
+  const uniTex = canvasTex(2048, 220, (c, w, h) => {                            // 참여 대학 이름 띠 (대학명단_영상팀용.txt, 로고 모양은 그림)
+    c.fillStyle = '#fbfcfe'; c.fillRect(0, 0, w, h);
+    [['고려대학교 세종캠퍼스', '#a3102a'], ['고려대학교', '#a3102a'], ['KU 건국대학교', '#036b3f'], ['영남대학교', '#1d3f8f'], ['전주비전대학교', '#1a3f9c']].forEach(([s, col], i) => {
+      const x = w * (0.1 + i * 0.2); c.fillStyle = col; c.beginPath(); c.arc(x - 150, h / 2, 34, 0, 7); c.fill(); T(c, s, x - 104, h / 2, `800 ${s.length > 7 ? 46 : 56}px ${FONT}`, col, 'left');
+    });
+  });
+  const cycleTex = canvasTex(1536, 1024, (c, w, h) => {                         // 「물의 순환」 LED (시안 13번 · 12번에서 글자 일부만 보임 → 보이는 글자만)
     const bg = c.createLinearGradient(0, 0, w, 0); bg.addColorStop(0, '#061a5a'); bg.addColorStop(1, '#0a3aa0'); c.fillStyle = bg; c.fillRect(0, 0, w, h);
     for (let i = 0; i < 110; i++) { c.globalAlpha = .06 + Math.random() * .18; c.fillStyle = '#6fd2ff'; c.fillRect(Math.random() * w, 0, 1 + Math.random() * 3, h); }
-    c.globalAlpha = 1; c.fillStyle = '#fff'; c.textBaseline = 'top';
-    c.font = `900 84px ${FONT}`; c.fillText('물의 순환', 70, 90);
-    [[540, '지표수·지하수', []], [1040, '우리의 생활과 산업', ['자연의 물은 가정, 농업, 산업 등', '다양한 곳에서 사용되며,', '다시 처리되어 자연으로 돌아갑니다.']]].forEach(([x, t, L]) => {
-      c.fillStyle = '#fff'; c.font = `800 46px ${FONT}`; c.fillText(t, x, 110);
-      c.font = `500 28px ${FONT}`; L.forEach((s, i) => c.fillText(s, x, 180 + i * 40));
-      if (!L.length) { c.fillStyle = 'rgba(255,255,255,.35)'; for (let i = 0; i < 3; i++) c.fillRect(x, 190 + i * 40, 360, 12); }
-      const g = c.createRadialGradient(x + 200, 560, 0, x + 200, 560, 190); g.addColorStop(0, '#bfe8ff'); g.addColorStop(.55, '#2c7a8a'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(x + 200, 560, 190, 0, 7); c.fill();
-    });
+    c.globalAlpha = 1; T(c, '물의 순환', 90, 120, `900 84px ${FONT}`, '#fff', 'left');
+    [[560, '지표수 · 지하수'], [1060, '우리의 생활과 산업']].forEach(([x, s]) => { T(c, s, x, 140, `800 46px ${FONT}`, '#fff', 'left'); c.fillStyle = 'rgba(255,255,255,.35)'; for (let i = 0; i < 3; i++) c.fillRect(x, 200 + i * 40, 360, 12);
+      const g = c.createRadialGradient(x + 200, 560, 0, x + 200, 560, 190); g.addColorStop(0, '#bfe8ff'); g.addColorStop(.55, '#2c7a8a'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(x + 200, 560, 190, 0, 7); c.fill(); });
     c.strokeStyle = '#9fe9ff'; c.lineWidth = 6; c.beginPath(); c.moveTo(200, 720); c.bezierCurveTo(500, 900, 900, 520, 1450, 760); c.stroke();
   });
-  const floorTex = canvasTex(512, 128, (c, w, h) => { const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#1b5fd8'); g.addColorStop(1, '#06205e'); c.fillStyle = g; c.fillRect(0, 0, w, h); for (let i = 0; i < 12; i++) { c.strokeStyle = 'rgba(160,230,255,.4)'; c.beginPath(); c.arc(Math.random() * w, Math.random() * h, 4 + Math.random() * 10, 0, 7); c.stroke(); } });
-  const plateTex = canvasTex(512, 160, (c, w, h) => { c.fillStyle = '#07080c'; c.fillRect(0, 0, w, h); c.fillStyle = '#fff'; c.font = `800 64px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('에코업(業)', w / 2, h / 2 + 4); });
-  const awardTex = canvasTex(512, 640, (c, w, h) => { c.fillStyle = '#f6f8fc'; c.fillRect(0, 0, w, h); c.fillStyle = '#0d2a8a'; c.font = `900 78px ${FONT}`; c.textAlign = 'center'; c.fillText('경진대회', w / 2, 120); c.fillText('수상작', w / 2, 210); const g = c.createLinearGradient(0, 300, 0, 560); g.addColorStop(0, '#5aa6e8'); g.addColorStop(1, '#1d4fa8'); c.fillStyle = g; c.fillRect(50, 290, w - 100, 270); });
+  const glowPanel = canvasTex(512, 256, (c, w, h) => { const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#d8f6ff'); g.addColorStop(1, '#9fe0ff'); c.fillStyle = g; c.fillRect(0, 0, w, h); c.strokeStyle = 'rgba(40,140,200,.5)'; c.lineWidth = 3; [[20, 30, 200, 140], [240, 30, 120, 200], [380, 30, 110, 200]].forEach(r => c.strokeRect(...r)); });
 
   return {
     '에코업'(g, W, D, carpet, slope) {
       const k = boothKit(g, slope), fr = k.fr;
+      const X = p => (p - 380) / 245 * W, Z = p => (p - 1052) / 944 * D, P = L => L.map(([a, b]) => [X(a), Z(b)]);
       const wh = M(0xf3f6fb, { roughness: .45, emissive: 0x6a7488, emissiveIntensity: .5 }), blu = M(0x1450c8, { roughness: .6, emissive: 0x0a2a80, emissiveIntensity: .35 });
-      const blk = M(0x0a0b10, { roughness: .6 }), cy = E(0x3fb8ff, 2.4), blueC = M(0x1546b8, { roughness: .95 });
+      const blk = M(0x0a0b10, { roughness: .6 }), cy = E(0x3fb8ff, 2.4), blueC = M(0x1546b8, { roughness: .95 }), chrome = M(0xc9ced8, { metalness: .8, roughness: .25 });
+      const DS = { side: THREE.DoubleSide };
       carpet.material = M(0x5f6268, { roughness: .95 });                         // 회색 카펫
       const add = (m, p = g) => { p.add(m); return m; };
-      const shapeFlat = (sh, mat, y = 0.05) => { const m = new THREE.Mesh(new THREE.ShapeGeometry(sh, 24), mat); m.rotation.x = -Math.PI / 2; m.position.y = y; return add(m); };
-      const extr = (sh, h, mat, y0 = 0) => { const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: false, curveSegments: 24 }), mat); m.rotation.x = -Math.PI / 2; m.position.y = y0; return add(m); };  // 도형 y = -z, 높이로 세움
-      const arc = (cx, cz, r, a0, a1, n = 14) => Array.from({ length: n + 1 }, (_, i) => { const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; return [cx + r * Math.cos(a), cz + r * Math.sin(a)]; });
-      const ribbon = (P, h, mat, y0 = 0, us = 3) => {                          // 곡선 벽 (점 [x, z] 이어 세움)
-        const pos = [], uv = [], idx = []; let L = 0;
-        P.forEach(([x, z], i) => { if (i) L += Math.hypot(x - P[i - 1][0], z - P[i - 1][1]); pos.push(x, y0, z, x, y0 + h, z); uv.push(L / us, 0, L / us, 1); if (i) { const a = (i - 1) * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } });
-        const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
-        return add(new THREE.Mesh(geo, mat));
+      const geo = (pos, uv, idx) => { const q = new THREE.BufferGeometry(); q.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); if (uv) q.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); q.setIndex(idx); q.computeVertexNormals(); return q; };
+      const rib = (Q, y0, h, mat, us = 0) => {                                  // 곡선 벽: 점 [x, z]를 이어 세움. h = 수 또는 점마다 높이. us = 0이면 그림 한 장을 끝까지, 아니면 us m마다 반복
+        const L = [0]; for (let i = 1; i < Q.length; i++) L.push(L[i - 1] + Math.hypot(Q[i][0] - Q[i - 1][0], Q[i][1] - Q[i - 1][1]));
+        const pos = [], uv = [], idx = [];
+        Q.forEach(([x, z], i) => { const hh = Array.isArray(h) ? h[i] : h, u = us ? L[i] / us : L[i] / L[L.length - 1]; pos.push(x, y0, z, x, y0 + hh, z); uv.push(u, 0, u, 1); if (i) { const a = (i - 1) * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } });
+        return add(new THREE.Mesh(geo(pos, uv, idx), mat));
       };
-
-      // ① 앞 아치 게이트 (파랑 바깥 띠 + 흰 안쪽 띠 + 하늘색 빛줄) · 위 「에코업(業)」 글자
-      const AX = 0.15, A = 4.55, Bh = 4.5, T1 = 0.6, T2 = 0.8, ZD = 1.4;
-      const band = (a0, b0, a1, b1) => { const s = new THREE.Shape(), n = 48; for (let i = 0; i <= n; i++) { const t = Math.PI * i / n; s[i ? 'lineTo' : 'moveTo'](AX + a0 * Math.cos(t), b0 * Math.sin(t)); } for (let i = n; i >= 0; i--) { const t = Math.PI * i / n; s.lineTo(AX + a1 * Math.cos(t), b1 * Math.sin(t)); } return s; };
-      [[band(A, Bh, A - T1, Bh - T1), blu], [band(A - T1, Bh - T1, A - T1 - T2, Bh - T1 - T2), wh]].forEach(([s, m]) => { const q = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: ZD, bevelEnabled: false }), m); q.position.z = -0.3 - ZD; fr.add(q); });
-      const eTube = (a, b, z, r = 0.04) => { const P = []; for (let i = 0; i <= 40; i++) { const t = Math.PI * i / 40; P.push(new THREE.Vector3(AX + a * Math.cos(t), b * Math.sin(t), z)); } fr.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P), 80, r, 6), cy)); };
-      eTube(A - T1 + 0.06, Bh - T1 + 0.06, -0.28); eTube(A - T1 - T2 + 0.04, Bh - T1 - T2 + 0.04, -0.28); eTube(A - T1 - T2 + 0.04, Bh - T1 - T2 + 0.04, -0.3 - ZD - 0.02);
-      k.pl(GLOW(B3('ecoup_logo'), 1.25), 3.2, 0.78, AX, Bh + 0.42, -0.95, 0, fr);
-      k.flat(blueC, AX - A, AX + A, -1.75, -0.25, 0.055, fr);
-      k.box(1.6, 3.4, 0.25, wh, -W + 0.8, -0.55, 0, fr);                        // 아치 왼쪽 흰 벽
-      // ② 오른쪽 앞 검정 상자 (경진대회 수상 화면)
-      { const q = new THREE.Group(); q.position.set(W - 1.3, 0, -2.9); q.rotation.y = -0.35; g.add(q);
-        box(2.2, 2.7, 0.5, blk, 0, 0, 0, q);
-        const s = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.0), GLOW(B3('ecoup_tv'), 1.1)); s.position.set(0, 1.55, 0.26); q.add(s);
-        const t1 = k.txt(['경진대회 수상'], 1.3, 0.22, { fg: '#fff', size: 150 }, 1.0); t1.position.set(0, 2.3, 0.26); q.add(t1);
-        const t2 = k.txt(['에코업(業)'], 1.1, 0.26, { fg: '#fff', size: 170 }, 1.0); t2.position.set(0, 0.7, 0.26); q.add(t2); }
-      // ③ 왼쪽 앞 흰 낮은 카운터 + 검정 「에코업(業)」 판 2개 (안쪽 보기)
-      k.bxz(-W, -W + 0.6, -5.6, -1.2, 1.0, wh); k.bxz(-W + 0.6, -W + 0.62, -5.6, -1.2, 0.05, cy, 0.9);
-      [-2.3, -4.3].forEach(z => { k.box(0.06, 0.55, 1.6, blk, -W + 0.64, z, 0.25); k.pl(GLOW(plateTex, 0.95), 1.5, 0.47, -W + 0.68, 0.52, z, Math.PI / 2); });
-
-      // ④ 왼쪽 안내 LED 벽 (꺾인 면) · 어두운 기둥 · 「물의 순환」 곡면 LED
-      const seg = (x0, z0, x1, z1, h, mat, y0 = 0) => { const L = Math.hypot(x1 - x0, z1 - z0), q = new THREE.Mesh(new THREE.PlaneGeometry(L, h), mat); q.position.set((x0 + x1) / 2, y0 + h / 2, (z0 + z1) / 2); q.rotation.y = -Math.atan2(z1 - z0, x1 - x0); return add(q); };
-      const wallBack = (x0, z0, x1, z1, h) => { const L = Math.hypot(x1 - x0, z1 - z0), p = new THREE.Group(), q = box(L, h, 0.3, blk, 0, 0, 0, p); p.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); p.rotation.y = -Math.atan2(z1 - z0, x1 - x0); q.position.z = -0.17; g.add(p); };
-      // 면 방향: 점 순서를 앞→뒤로 두면 안쪽(+x)을 봄
-      const IA = [-W + 0.1, -5.9], IB = [-4.4, -9.4], onI = t => [IA[0] + (IB[0] - IA[0]) * t + 0.016, IA[1] + (IB[1] - IA[1]) * t + 0.008];
-      wallBack(...IA, ...IB, 4.4); seg(...IA, ...IB, 4.2, GLOW(infoTex, 1.05), 0.1);
-      seg(...onI(0.06), ...onI(0.62), 0.5, GLOW(B3('ecoup_logo'), 1.15), 3.55);   // 안내 LED 위 로고 (시안 그림)
-      k.bxz(-4.55, -4.05, -10.6, -9.4, 4.6, M(0x0b1a52, { roughness: .5, emissive: 0x0a2a90, emissiveIntensity: .6 }));
-      const cyc = Array.from({ length: 13 }, (_, i) => { const t = i / 12, u = 1 - t; return [u * u * -4.3 + 2 * u * t * -4.7 + t * t * (-W + 0.25), u * u * -10.6 + 2 * u * t * -13.3 + t * t * -15.4]; });  // 살짝 굽은 면
-      const cm = GLOW(cycleTex, 1.05, { side: THREE.DoubleSide }); const r1 = ribbon(cyc, 4.1, cm, 0.15, 99); { const uv = r1.geometry.attributes.uv, n = uv.count / 2, P = cyc; let L = [0]; for (let i = 1; i < P.length; i++) L.push(L[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1])); for (let i = 0; i < n; i++) { uv.setX(2 * i, L[i] / L[n - 1]); uv.setX(2 * i + 1, L[i] / L[n - 1]); } uv.needsUpdate = true; }
-      ribbon(cyc.map(([x, z]) => [x - 0.2, z]), 4.4, blk, 0);
-      // ⑤ 뒤 구름 모양 물줄기 LED 벽 (가운데 파랑 기둥) · 위아래 파랑 띠
-      const fallT = B3('ecoup_fall'); fallT.wrapS = THREE.RepeatWrapping;
-      const P1 = [[-W + 0.25, -15.4], ...arc(-3.2, -19.8, 3.1, 160, 340, 18)], P2 = arc(3.4, -19.6, 2.9, 200, 390, 18);
-      [P1, P2].forEach(P => {
-        ribbon(P, 3.5, GLOW(fallT, 1.15, { side: THREE.DoubleSide }), 0.15, 2.6);
-        ribbon(P, 0.3, blu, 3.65); ribbon(P, 0.15, blu, 0);
-        const out = P.map(([x, z], i) => { const [x2, z2] = P[Math.min(i + 1, P.length - 1)], [x1, z1] = P[Math.max(i - 1, 0)], dx = x2 - x1, dz = z2 - z1, l = Math.hypot(dx, dz) || 1; return [x + dz / l * 0.25, z - dx / l * 0.25]; });
-        ribbon(out, 4.0, blk, 0);
+      const strip = (A, B, y, mat, hA = null) => {                               // 두 곡선 사이 가로 띠 (바닥 띠 · 벽 윗면)
+        const pos = [], idx = []; A.forEach(([x, z], i) => { const yy = hA ? hA[i] : y; pos.push(x, yy, z, B[i][0], yy, B[i][1]); if (i) { const a = (i - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } });
+        return add(new THREE.Mesh(geo(pos, null, idx), mat.clone ? Object.assign(mat.clone(), { side: THREE.DoubleSide }) : mat));
+      };
+      const off = (Q, d, C) => Q.map(([x, z], i) => {                           // 곡선을 d m 옮김 (+ = C 쪽)
+        const [x2, z2] = Q[Math.min(i + 1, Q.length - 1)], [x1, z1] = Q[Math.max(i - 1, 0)]; let nx = z2 - z1, nz = -(x2 - x1); const l = Math.hypot(nx, nz) || 1; nx /= l; nz /= l;
+        if (nx * (C[0] - x) + nz * (C[1] - z) < 0) { nx = -nx; nz = -nz; } return [x + nx * d, z + nz * d];
       });
-      k.box(1.3, 4.3, 1.0, blu, 0.2, -21.6); k.pl(GLOW(fallT, 1.15), 1.1, 3.6, 0.2, 2.0, -21.09);
-      // 오른쪽 뒤 「물, 그리고 더 나은 내일」 LED (위 = 시안 그림, 아래 = 물빛 바닥)
-      { const q = new THREE.Group(); q.position.set(W - 0.55, 0, -16.1); q.rotation.y = -Math.PI / 2 + 0.45; g.add(q);
-        box(3.6, 4.6, 0.3, blk, 0, -0.18, 0, q);
-        const a = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.5), GLOW(B3('ecoup_water'), 1.1)); a.position.set(0, 2.85, 0.01); q.add(a);
-        const b = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 1.0), GLOW(floorTex, 1.0)); b.position.set(0, 0.6, 0.01); q.add(b); }
-      // 바깥 검정 큰 벽 (왼쪽 · 뒤, 시안 조감 그대로 높게)
-      k.bxz(-W - 0.15, -W + 0.05, -D, -5.9, 5.0, blk); k.bxz(-W, W, -D - 0.2, -D, 5.0, blk);
-      k.flat(M(0x111318, { roughness: .9 }), -W, W, -D, -22.6, 0.05);
+      const shapeOf = Q => { const s = new THREE.Shape(); Q.forEach(([x, z], i) => s[i ? 'lineTo' : 'moveTo'](x, -z)); return s; };
+      const flatShape = (s, mat, y = 0.055) => { const m = new THREE.Mesh(new THREE.ShapeGeometry(s, 24), mat); m.rotation.x = -Math.PI / 2; m.position.y = y; return add(m); };
+      const extr = (s, h, mat, y0 = 0, p = g) => { const m = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: h, bevelEnabled: false, curveSegments: 32 }), mat); m.rotation.x = -Math.PI / 2; m.position.y = y0; return add(m, p); };
+      const ringS = (cx, cz, r0, r1, a0, a1) => { const s = new THREE.Shape(); s.absarc(cx, -cz, r1, a0, a1, false); s.absarc(cx, -cz, r0, a1, a0, true); return s; };   // a = π~2π 이면 앞(+z)쪽 반원
+      const cylFace = (r, h, y, x, z, t0, tl, mat) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 40, 1, true, t0, tl), mat); m.position.set(x, y, z); return add(m); };
+      const stool = (x, z) => { k.box(0.05, 0.72, 0.05, chrome, x, z); const s = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.06, 16), wh); s.position.set(x, 0.75, z); g.add(s); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 16), chrome); b.position.set(x, 0.015, z); g.add(b); };
 
-      // ⑥ 가운데 파랑 카펫 길 (안내데스크 ~ 체험 섬)
-      { const s = new THREE.Shape(), R = 2.05; s.moveTo(R, 6.05); s.lineTo(R, 17.35); s.absarc(0, 17.35, R, 0, Math.PI, false); s.lineTo(-R, 6.05); s.absarc(0, 6.05, R, Math.PI, 2 * Math.PI, false); shapeFlat(s, blueC, 0.05); }
-      // 안내데스크 (흰 반원 · 파랑 윗판 빛줄) + 뒤 흰 판(앞 로고 · 뒤 화면 4개)
-      const half = (cx, cz, r0, r1, a0, a1) => { const s = new THREE.Shape(); s.absarc(cx, -cz, r1, a0, a1, false); s.absarc(cx, -cz, r0, a1, a0, true); return s; };
-      extr(half(0, -6.6, 1.15, 1.6, Math.PI * 1.08, Math.PI * 1.92), 1.0, wh);
-      extr(half(0, -6.6, 1.1, 1.65, Math.PI * 1.08, Math.PI * 1.92), 0.06, blu, 1.0);
-      { const t = new THREE.Mesh(new THREE.TorusGeometry(1.64, 0.025, 6, 40, Math.PI * 0.84), cy); t.rotation.x = Math.PI / 2; t.rotation.z = Math.PI * 0.08; t.position.set(0, 0.98, -6.6); g.add(t); }
-      k.pl(new THREE.MeshBasicMaterial({ map: B3('ecoup_mark'), toneMapped: false, color: new THREE.Color().setScalar(0.8) }), 1.5, 0.42, 0, 0.55, -4.96);
-      k.box(3.4, 2.5, 0.25, wh, 0, -7.7); k.pl(new THREE.MeshBasicMaterial({ map: B3('ecoup_mark'), toneMapped: false, color: new THREE.Color().setScalar(0.8) }), 2.2, 0.61, 0, 2.0, -7.56);
-      k.inst(new THREE.BoxGeometry(0.6, 0.9, 0.04), M(0x05060a, { roughness: .3 }), [-1.2, -0.4, 0.4, 1.2].map(x => [x, 1.35, -7.84]));
-      // ⑦ 체험 섬: 양 끝 흰 C 카운터 · 가운데 물결 아치 진열대 2줄 · 수상작 판 · 태블릿 받침
-      extr(half(0, -11.7, 1.15, 1.6, Math.PI, 2 * Math.PI), 1.0, wh); extr(half(0, -17.4, 1.15, 1.6, 0, Math.PI), 1.0, wh);
-      const prof = (() => { const L = 4.4, n = 150, c = []; for (let i = 0; i <= n; i++) { const s = L * i / n; c.push([s, 0.04 + 1.15 * Math.pow(Math.abs(Math.sin(3 * Math.PI * s / L)), 0.4)]); }
-        const o = [], inn = []; c.forEach(([x, y], i) => { const [x2, y2] = c[Math.min(i + 1, n)], [x1, y1] = c[Math.max(i - 1, 0)], dx = x2 - x1, dy = y2 - y1, l = Math.hypot(dx, dy) || 1; o.push([x - dy / l * 0.05, y + dx / l * 0.05]); inn.push([x + dy / l * 0.05, Math.max(0, y - dx / l * 0.05)]); });
-        const s = new THREE.Shape(); o.forEach(([x, y], i) => s[i ? 'lineTo' : 'moveTo'](x, y)); inn.reverse().forEach(([x, y]) => s.lineTo(x, y)); return new THREE.ExtrudeGeometry(s, { depth: 0.55, bevelEnabled: false }); })();
-      [-1.75, 1.2].forEach(x => { const m = new THREE.Mesh(prof, wh); m.rotation.y = Math.PI / 2; m.position.set(x, 0, -12.35); g.add(m); });
-      k.inst(new THREE.BoxGeometry(0.26, 0.04, 0.2), M(0x1a2a50, { emissive: 0x2a74ff, emissiveIntensity: .7 }), [-1.48, 1.48].flatMap(x => [-13.08, -14.55, -16.02].map(z => [x, 1.27, z])));
-      k.inst(new THREE.CylinderGeometry(0.03, 0.03, 1.1, 8), M(0xdfe3ea), [[-0.7, 0.55, -12.6], [0.7, 0.55, -12.6], [-0.7, 0.55, -16.4], [0.7, 0.55, -16.4]]);
-      k.inst(new THREE.BoxGeometry(0.34, 0.46, 0.03), M(0x0c1530, { emissive: 0x6a4cff, emissiveIntensity: .6 }), [[-0.7, 1.25, -12.6], [0.7, 1.25, -12.6], [-0.7, 1.25, -16.4], [0.7, 1.25, -16.4]]);
-      k.box(0.06, 1.2, 0.06, wh, 0.1, -16.9); k.pl(M(0xffffff, { map: awardTex, emissive: 0xffffff, emissiveMap: awardTex, emissiveIntensity: .45 }), 0.9, 1.12, 0.1, 1.85, -16.86);
-      // 매다는 LED 상자 (네 면 물방울 화면 · 아래 흰 빛) + 줄
-      { const s = 2.6, yc = 4.6, h = 1.0, sm = GLOW(B3('ecoup_cube'), 1.15), mats = [sm, sm, M(0x101318), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffffff).multiplyScalar(1.6), toneMapped: false }), sm, sm];
-        const c = new THREE.Mesh(new THREE.BoxGeometry(s, h, s), mats); c.position.set(0, yc, -14.3); g.add(c);
-        const top = yc + h / 2, apex = [0, top + 1.2, -14.3];
-        [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([a, b]) => { const p = new THREE.Vector3(a * s / 2, top, -14.3 + b * s / 2), q = new THREE.Vector3(...apex), L = p.distanceTo(q), m = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, L, 4), M(0x9aa3b2)); m.position.copy(p).add(q).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), q.clone().sub(p).normalize()); g.add(m); });
-        k.box(0.03, 11.6 - apex[1], 0.03, M(0x3a3f4a), 0, -14.3, apex[1]); }
-      // ⑧ 오른쪽: 흰 탁자 4개 · 흰 의자 · 벽쪽 흰 낮은 진열대(파랑 빛)
-      const tz = [-12.85, -10.7, -7.55, -5.45];
-      k.inst(new THREE.BoxGeometry(1.4, 0.05, 1.8), wh, tz.map(z => [4.3, 0.74, z]));
-      k.inst(new THREE.CylinderGeometry(0.03, 0.03, 0.72, 6), M(0xd8dce4), tz.flatMap(z => [[3.7, 0.36, z - 0.8], [4.9, 0.36, z - 0.8], [3.7, 0.36, z + 0.8], [4.9, 0.36, z + 0.8]]));
-      k.inst(CHAIR, wh, tz.flatMap(z => [[3.25, 0, z - 0.45, -Math.PI / 2], [3.25, 0, z + 0.45, -Math.PI / 2], [5.35, 0, z - 0.45, Math.PI / 2], [5.35, 0, z + 0.45, Math.PI / 2]]));
-      k.bxz(W - 0.55, W, -14.2, -3.9, 1.05, wh); k.inst(new THREE.BoxGeometry(0.02, 0.55, 2.3), E(0x2f9bff, 1.6), [-12.9, -10.3, -7.7, -5.1].map(z => [W - 0.56, 0.55, z]));
-      // ⑨ 하늘색 빛 기둥 램프 (LED 벽 앞)
-      k.inst(new THREE.CylinderGeometry(0.12, 0.12, 1.1, 16), E(0x5fe6ff, 1.8), [[-4.7, 1.0, -8.9], [-4.3, 1.0, -11.2], [-5.6, 1.0, -14.9]]);
-      k.inst(new THREE.CylinderGeometry(0.02, 0.02, 0.45, 6), M(0x9aa3b2), [[-4.7, 0.22, -8.9], [-4.3, 0.22, -11.2], [-5.6, 0.22, -14.9]]);
-      // 조명 (부스 자체 2개)
-      k.spot([AX, 7.5, 5], [AX, 2.6, -1.0], 0xe6f0ff, 150, 0.6); k.spot([0, 8, -11], [0, 0, -15], 0xd8e8ff, 120, 0.8);
-      k.pool(0, -6.4, 3.2, 0x8fc8ff, 0.3); k.pool(-2.5, -19.3, 5, 0x3f9bff, 0.35); k.pool(3.2, -19, 4, 0x3f9bff, 0.3); k.pool(-4, -10.5, 3.5, 0x4fa0ff, 0.3); k.pool(4.3, -9, 4, 0xa8c8ff, 0.18);
+      // ① 앞 아치 (파랑 바깥 띠 + 흰 안쪽 띠 + 하늘색 빛줄) · 위 「에코업(業)」 글자 · 오른쪽 다리 「경진대회 수상」 화면
+      const AX = X(420), A0 = W - AX - 0.02, B0 = 4.45, A1 = A0 - 1.25, B1 = B0 - 0.7, A2 = A1 - 0.6, B2 = B1 - 0.55, ZD = 1.2;
+      const band = (a0, b0, a1, b1) => { const s = new THREE.Shape(), n = 56; for (let i = 0; i <= n; i++) { const t = Math.PI * i / n; s[i ? 'lineTo' : 'moveTo'](AX + a0 * Math.cos(t), b0 * Math.sin(t)); } for (let i = n; i >= 0; i--) { const t = Math.PI * i / n; s.lineTo(AX + a1 * Math.cos(t), b1 * Math.sin(t)); } return s; };
+      [[band(A0, B0, A1, B1), blu], [band(A1, B1, A2, B2), wh]].forEach(([s, m]) => { const q = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: ZD, bevelEnabled: false }), m); q.position.z = -0.15 - ZD; fr.add(q); });
+      const eTube = (a, b, z, r = 0.04) => { const Q = []; for (let i = 0; i <= 48; i++) { const t = Math.PI * i / 48; Q.push(new THREE.Vector3(AX + a * Math.cos(t), b * Math.sin(t), z)); } fr.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Q), 96, r, 6), cy)); };
+      eTube(A1 + 0.08, B1 + 0.08, -0.13); eTube(A2 + 0.07, B2 + 0.07, -0.13); eTube(A2 + 0.07, B2 + 0.07, -0.17 - ZD);
+      [-0.45, -0.75, -1.05].forEach(z => eTube(A2 - 0.02, B2 - 0.02, z, 0.025));  // 아치 안쪽 빛줄 3 (10번 시안)
+      k.pl(GLOW(B3('ecoup_logo'), 1.25), 3.7, 0.9, AX, B0 + 0.5, -0.75, 0, fr);
+      k.pl(GLOW(B3('ecoup_tv'), 1.1), 1.05, 0.6, AX + 4.3, 1.85, -0.14, 0, fr);
+      { const t = k.txt(['경진대회 수상'], 1.0, 0.2, { fg: '#fff', size: 150 }, 1.0); t.position.set(AX + 3.9, 2.45, -0.14); fr.add(t); }
+      { const t = k.txt(['에코업(業)'], 0.9, 0.2, { fg: '#fff', size: 160 }, 1.0); t.position.set(AX + 4.6, 1.2, -0.14); fr.add(t); }
+      k.flat(blueC, AX - A0, AX + A0, -1.35, -0.15, 0.055, fr);
+      k.box(AX - A0 + W, 3.6, 0.6, wh, (-W + AX - A0) / 2, -0.4, 0, fr);       // 아치 왼쪽 흰 큰 벽
+
+      // ② 왼쪽 앞: 흰 옆벽 + 낮은 흰 진열대(검정 「에코업(業)」 판 3) — 4·13번
+      k.bxz(-W, -W + 0.15, Z(1000), Z(778), 2.4, wh);
+      k.bxz(-W + 0.15, -W + 0.75, Z(985), Z(800), 1.0, wh); k.bxz(-W + 0.74, -W + 0.76, Z(985), Z(800), 0.04, cy, 0.92);
+      [Z(830), Z(880), Z(930)].forEach(z => k.pl(GLOW(plateTex, 0.95), 1.3, 0.4, -W + 0.77, 0.52, z, Math.PI / 2));
+
+      // ③ 왼쪽 안내 벽 (위 물결 · 파랑) + 안내 LED(9번 시안 그림) + 「물의 순환」 LED
+      const IW = P([[150, 776], [166, 752], [179, 714], [186, 670], [187, 630], [184, 585], [180, 540], [176, 490], [172, 440], [170, 412]]);
+      const IH = [4.3, 4.35, 4.3, 4.1, 3.75, 3.45, 3.4, 3.55, 3.85, 4.0];
+      const IC = [X(380), Z(600)], IWo = off(IW, -0.3, IC);
+      rib(IW, 0, IH, M(0x1450c8, { roughness: .6, emissive: 0x0a2a80, emissiveIntensity: .35, ...DS })); rib(IWo, 0, IH, blu); strip(IW, IWo, 0, blu, IH);
+      rib(off(P([[166, 750], [178, 716], [185, 680], [187, 640], [186, 600], [183, 562]]), 0.03, IC), 0.35, 2.9, GLOW(B3('ecoup2_info'), 1.1, DS));
+      rib(off(P([[181, 545], [178, 505], [175, 466], [172, 430]]), 0.03, IC), 0.4, 2.6, GLOW(cycleTex, 1.05, DS));
+      k.inst(new THREE.CylinderGeometry(0.06, 0.06, 1.1, 10), E(0x5fe6ff, 2.0), off(P([[172, 735], [186, 610], [178, 500]]), 0.35, IC).map(([x, z]) => [x, 0.75, z]));   // 화면 앞 하늘색 빛 기둥
+      k.box(0.7, 4.45, 0.7, blu, X(168), Z(405));                                // 안내 벽과 물줄기 벽 사이 파랑 기둥
+      strip(IW, off(IW, 0.45, IC), 0.05, blueC);
+
+      // ④ 물줄기 LED 벽 (뒤 물결 두 덩이, 가운데 파랑 기둥) — 1·3·12·13번
+      const WV = P([[165, 412], [158, 370], [158, 330], [167, 290], [188, 260], [218, 240], [255, 228], [292, 226], [325, 233], [352, 244], [385, 250], [418, 244], [447, 232], [480, 224], [517, 226], [550, 240], [575, 265], [590, 300], [593, 335], [588, 365], [578, 392]]);
+      const WC = [X(380), Z(420)], fallT = B3('ecoup_fall'); fallT.wrapS = THREE.RepeatWrapping;
+      rib(WV, 0.1, 3.5, GLOW(fallT, 1.15, DS), 2.6);
+      rib(off(WV, 0.01, WC), 3.6, 0.15, blu); rib(off(WV, 0.01, WC), 0, 0.1, blu);
+      const WVo = off(WV, -0.3, WC); rib(WVo, 0, 3.95, blk); strip(WV, WVo, 3.95, blk);
+      strip(WV, off(WV, 0.5, WC), 0.05, blueC);
+      k.box(0.5, 3.95, 0.4, blu, X(385), Z(250) + 0.05);                         // 가운데 파랑 기둥
+      { const s = new THREE.Shape(); s.absarc(X(385), -Z(248), X(425) - X(385), Math.PI, 2 * Math.PI, false); flatShape(s, blueC, 0.055); }
+      // 물결 바깥 (검정 바닥 · 둘레 검정 벽)
+      const dk = M(0x111318, { roughness: .9 });
+      k.flat(dk, -W, W, -D, Z(232), 0.04); k.flat(dk, -W, X(165), Z(232), Z(412), 0.04); k.flat(dk, X(590), W, Z(232), Z(400), 0.04);
+      k.bxz(-W, W, -D, -D + 0.2, 3.95, blk); k.bxz(-W, -W + 0.2, -D, Z(410), 3.95, blk); k.bxz(W - 0.2, W, -D, Z(400), 3.95, blk);
+
+      // ⑤ 오른쪽 뒤 수도꼭지 진열장 (하늘색 빛 상자 · 부엌 그림 · 위 수도꼭지) — 11번
+      { const x0 = X(578), z0 = Z(412), z1 = Z(525), zc = (z0 + z1) / 2, L = z1 - z0;
+        k.bxz(x0, W - 0.05, z0, z1, 2.7, M(0x9fe6ff, { roughness: .4, emissive: 0x3fb8ff, emissiveIntensity: .55 }));
+        k.pl(GLOW(B3('ecoup2_kitchen'), 1.05), L - 0.3, 1.05, x0 - 0.01, 2.05, zc, -Math.PI / 2);
+        k.pl(GLOW(glowPanel, 0.95), L - 0.3, 1.25, x0 - 0.01, 0.9, zc, -Math.PI / 2);
+        const fm = M(0x8fd8ff, { roughness: .35, emissive: 0x2a9be0, emissiveIntensity: .5 }), xf = x0 + 0.45;
+        const cyl = (r, h, x, y, z, rz = 0) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 20), fm); m.position.set(x, y, z); m.rotation.z = rz; g.add(m); };
+        cyl(0.13, 0.7, xf, 3.05, zc); cyl(0.11, 0.85, xf - 0.42, 3.2, zc, Math.PI / 2); cyl(0.13, 0.32, xf - 0.82, 3.02, zc);
+        cyl(0.05, 0.25, xf, 3.5, zc); k.box(0.12, 0.08, 0.7, fm, xf, zc, 3.6); k.box(0.7, 0.08, 0.12, fm, xf, zc, 3.6);
+        k.box(0.5, 3.95, 0.5, blu, X(575), Z(400));
+        flatShape(shapeOf(P([[578, 398], [545, 402], [515, 420], [503, 455], [508, 495], [530, 518], [578, 528]])), blueC); }
+
+      // ⑥ 가운데 섬 (파랑 바닥 · 뒤 진열장 · 양쪽 수상작 진열대 · C 바 테이블 · 대학 상담대 · 앞 안내데스크)
+      const hw = X(440), zT = Z(440), zB = Z(838);
+      { const s = new THREE.Shape(); s.moveTo(hw, -zB); s.lineTo(hw, -zT); s.absarc(0, -zT, hw, 0, Math.PI, false); s.lineTo(-hw, -zB); s.absarc(0, -zB, hw, Math.PI, 2 * Math.PI, false); flatShape(s, blueC, 0.06); }
+      // 뒤 끝: 흰 진열장 + 「경진대회 수상작」 세움판 + 흰 원통
+      k.box(1.25, 1.0, 0.8, wh, -0.1, Z(414)); k.inst(new THREE.CylinderGeometry(0.11, 0.13, 0.32, 16), wh, [[-0.45, 1.16, Z(414)], [0.0, 1.16, Z(414)], [0.3, 1.2, Z(414)]]);
+      k.box(0.05, 1.3, 0.05, chrome, -0.55, Z(432)); k.pl(M(0xffffff, { map: B3('ecoup2_award'), emissive: 0xffffff, emissiveMap: B3('ecoup2_award'), emissiveIntensity: .45 }), 0.75, 0.9, -0.55, 1.75, Z(432) + 0.03);
+      { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.95, 20), wh); m.position.set(X(420), 0.47, Z(410)); g.add(m); }
+      // 양쪽 수상작 진열대 (⊓ 높은 판 · 가운데 낮은 판 · 포스터 · 끝 태블릿)
+      const poster = M(0xffffff, { map: B3('ecoup2_poster'), emissive: 0xffffff, emissiveMap: B3('ecoup2_poster'), emissiveIntensity: .4 });
+      const za = Z(468), zb = Z(596), Lr = zb - za;
+      [-1, 1].forEach(sd => {
+        const x = sd * (hw - 0.4), xo = x + sd * 0.3;
+        [[za + 0.15, za + 1.15], [zb - 1.15, zb - 0.15]].forEach(([z0, z1]) => {                // ⊓ 진열대 2
+          k.bxz(x - 0.28, x + 0.28, z0, z1, 0.06, wh, 1.0); k.bxz(x - 0.28, x + 0.28, z0, z0 + 0.08, 1.0, wh); k.bxz(x - 0.28, x + 0.28, z1 - 0.08, z1, 1.0, wh);
+          k.inst(new THREE.CylinderGeometry(0.09, 0.1, 0.26, 14), wh, [[x, 1.19, z0 + 0.3], [x, 1.19, z1 - 0.3]]);
+        });
+        k.bxz(x - 0.28, x + 0.28, za + 1.15, zb - 1.15, 0.45, wh);              // 가운데 낮은 판
+        [za + 1.15 + (Lr - 2.3) * 0.28, za + 1.15 + (Lr - 2.3) * 0.72].forEach(z => k.pl(poster, 0.5, 1.0, xo + sd * 0.005, 0.95, z, sd * Math.PI / 2));
+        [za - 0.05, zb + 0.05].forEach(z => { k.box(0.04, 1.1, 0.04, chrome, xo, z); k.pl(M(0x0c1530, { emissive: 0x6a8cff, emissiveIntensity: .7 }), 0.3, 0.4, xo + sd * 0.03, 1.2, z, sd * Math.PI / 2); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.03, 16), wh); b.position.set(xo, 0.03, z); g.add(b); });
+      });
+      // C 바 테이블 (흰 바깥 · 파랑 안쪽) + 바 의자 4
+      { const zc = Z(600), r1 = hw - 0.05, r0 = r1 - 0.5;
+        extr(ringS(0, zc, r0, r1, Math.PI, 2 * Math.PI), 1.05, wh);
+        cylFace(r0 - 0.005, 1.0, 0.52, 0, zc, -Math.PI / 2, Math.PI, M(0x1450c8, { roughness: .6, emissive: 0x0a2a80, emissiveIntensity: .35, side: THREE.BackSide }));
+        k.inst(new THREE.CylinderGeometry(0.25, 0.25, 1.05, 18), wh, [[-(r0 + r1) / 2, 0.525, zc], [(r0 + r1) / 2, 0.525, zc]]);
+        [[-0.55, 1.95], [-1.25, 1.45], [0.55, 1.95], [1.25, 1.45]].forEach(([a, b]) => stool(a, zc + b * 0.95)); }
+      // 대학 상담대 4 (앞 = 참여 대학 이름 띠, 뒤 = 화면 · 흰 선반)
+      { const zk = Z(792), xs = [-1.17, -0.39, 0.39, 1.17];
+        xs.forEach(x => { k.box(0.74, 1.95, 0.1, wh, x, zk); k.pl(M(0x05070c, { emissive: 0x1a3a7a, emissiveIntensity: .5 }), 0.55, 0.8, x, 1.3, zk - 0.055, Math.PI); k.box(0.6, 0.04, 0.3, wh, x, zk - 0.2, 0.92); });
+        k.pl(GLOW(uniTex, 0.95), 3.1, 0.33, 0, 1.5, zk + 0.055);
+        k.pl(GLOW(B3('ecoup2_poster'), 0.9), 0.3, 0.5, xs[0], 1.35, zk - 0.056, Math.PI);
+        stool(-0.8, zk - 0.75); stool(0.8, zk - 0.75); }
+      // 앞 안내데스크 「안내 / Information · 더러운 물은 어디로 갔지?」 (흰 곡면 · 파랑 윗판 · 아랫단)
+      { const r1 = hw - 0.12, r0 = r1 - 0.5;
+        extr(ringS(0, zB, r0, r1, Math.PI, 2 * Math.PI), 0.95, wh, 0.08);
+        extr(ringS(0, zB, r0 - 0.03, r1 + 0.04, Math.PI, 2 * Math.PI), 0.06, blu, 1.03); extr(ringS(0, zB, r0, r1 - 0.04, Math.PI, 2 * Math.PI), 0.08, blu);
+        cylFace(r1 + 0.006, 0.9, 0.56, 0, zB, -Math.PI / 2, Math.PI, M(0xffffff, { map: deskTex, emissive: 0xffffff, emissiveMap: deskTex, emissiveIntensity: .45 }));
+        { const t = new THREE.Mesh(new THREE.TorusGeometry(r1 + 0.04, 0.02, 6, 40, Math.PI), cy); t.rotation.x = Math.PI / 2; t.position.set(0, 1.0, zB); g.add(t); } }
+      // 위 매단 마름모 간판 (네 면: 에코업(業) · 정수기 만들기 / 무드등 만들기)
+      { const q = new THREE.Group(), s = 2.3, y0 = 4.2, h = 1.1; q.position.set(0, 0, Z(455)); q.rotation.y = Math.PI / 4; g.add(q);
+        const inner = M(0x0b3fae, { roughness: .8, side: THREE.BackSide });         // 안쪽 면은 민무늬 (아래서 올려다볼 때 글자 뒤집혀 보이지 않게)
+        [faceLogo, faceProg, faceLogo, faceProg].forEach((tx, i) => { const a = i * Math.PI / 2; [GLOW(tx, 1.05), inner].forEach(mt => { const m = new THREE.Mesh(new THREE.PlaneGeometry(s, h), mt); m.position.set(Math.sin(a) * s / 2, y0 + h / 2, Math.cos(a) * s / 2); m.rotation.y = a; q.add(m); }); });
+        [y0, y0 + h].forEach(y => { [[0, s / 2, s, 0.05], [0, -s / 2, s, 0.05], [s / 2, 0, 0.05, s], [-s / 2, 0, 0.05, s]].forEach(([x, z, a, b]) => box(a + 0.04, 0.05, b + 0.04, M(0xdfe6f0, { metalness: .6, roughness: .3 }), x, z, y - 0.025, q)); });
+        [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([a, b]) => box(0.02, 6.2 - y0 - h, 0.02, M(0x3a3f4a), a * s / 2, b * s / 2, y0 + h, q)); }
+
+      // ⑦ 오른쪽 교육실 2칸 (흰 낮은 벽 · 검정 로고 판 · 긴 탁자 · 흰 의자) + 앞 개수대 — 2·3·13번
+      const wl = M(0xf3f6fb, { roughness: .45, emissive: 0x6a7488, emissiveIntensity: .5 }), xL = X(497), xR = X(615);
+      k.bxz(xL, W, Z(530), Z(538), 1.2, wl); k.bxz(xR, W, Z(538), Z(980), 1.2, wl);
+      k.bxz(xL, xL + 0.2, Z(538), Z(645), 1.2, wl); k.bxz(xL, xR, Z(737), Z(748), 1.2, wl); k.bxz(xL, xL + 0.2, Z(864), Z(945), 1.2, wl);
+      k.bxz(xL, xR, Z(945), Z(980), 0.95, wl);
+      k.inst(new THREE.BoxGeometry(0.42, 0.03, 0.34), M(0x9aa3b0, { metalness: .7, roughness: .3 }), [[X(540), 0.96, (Z(945) + Z(980)) / 2], [X(578), 0.96, (Z(945) + Z(980)) / 2]]);
+      k.pl(GLOW(plateTex, 0.95), 1.4, 0.44, (xL + xR) / 2, 0.55, Z(980) + 0.01);
+      k.box(xR - xL - 0.2, 0.03, 0.02, cy, (xL + xR) / 2, Z(980) + 0.012, 0.18);
+      [[Z(591)], [Z(904)]].forEach(([z]) => { k.pl(GLOW(plateTex, 0.95), 1.2, 0.38, xL - 0.01, 0.62, z, -Math.PI / 2); k.box(0.02, 0.03, 1.0, cy, xL - 0.012, z, 0.18); });
+      k.pl(GLOW(plateTex, 0.95), 1.4, 0.44, (xL + W) / 2, 0.62, Z(530) - 0.01, Math.PI);
+      [[Z(568), Z(706)], [Z(770), Z(905)]].forEach(([z0, z1]) => {
+        const xa = X(545), xb = X(583), xm = (xa + xb) / 2, n = 6, zs = Array.from({ length: n }, (_, i) => z0 + 0.35 + (z1 - z0 - 0.7) * i / (n - 1));
+        k.bxz(xa, xb, z0, z1, 0.05, wh, 0.72); k.inst(new THREE.BoxGeometry(0.05, 0.72, 0.05), chrome, [[xa + 0.1, 0.36, z0 + 0.1], [xb - 0.1, 0.36, z0 + 0.1], [xa + 0.1, 0.36, z1 - 0.1], [xb - 0.1, 0.36, z1 - 0.1]]);
+        k.inst(CHAIR, wh, zs.flatMap(z => [[xa - 0.35, 0, z, -Math.PI / 2], [xb + 0.35, 0, z, Math.PI / 2]]));
+        [[xa - 0.35, zs[1]], [xb + 0.35, zs[2]], [xa - 0.35, zs[4]], [xb + 0.35, zs[5]]].forEach(([x, z]) => figure(g, x, z, M(0xe8ecf4), 0.82));
+        k.pool(xm, (z0 + z1) / 2, 2.4, 0xa8c8ff, 0.18);
+      });
+
+      // ⑧ 위 사각 트러스 + 조명 (13번)
+      { const y = 6.2, xa = -2.1, xb = 2.1, z0 = Z(470), z1 = Z(960), zm = (z0 + z1) / 2;
+        [[xa, z0, xa, z1], [xb, z0, xb, z1], [xa, z0, xb, z0], [xa, zm, xb, zm], [xa, z1, xb, z1]].forEach(([a, b, c, d]) => truss(k.W(a, y, b), k.W(c, y, d), 0.4));
+        [[xa, z0], [xb, z0], [xa, z1], [xb, z1]].forEach(([x, z]) => k.box(0.025, 11.6 - y, 0.025, M(0x3a3f4a), x, z, y));
+        const L = []; for (let i = 0; i < 6; i++) { const z = z0 + 0.8 + (z1 - z0 - 1.6) * i / 5; L.push([xa, y - 0.35, z], [xb, y - 0.35, z]); }
+        k.inst(new THREE.CylinderGeometry(0.11, 0.09, 0.3, 10), M(0x1a1d24, { roughness: .5 }), L); }
+
+      // ⑨ 사람 · 조명
+      const fm = M(0xe8ecf4);
+      [[0, zB + 0.05], [-0.55, Z(600) + 1.85], [1.25, Z(600) + 1.4], [-3.4, Z(640)], [-2.6, Z(360)], [2.2, Z(300)], [-3.0, Z(930)], [2.4, Z(700)]].forEach(([x, z]) => figure(g, x, z, fm));
+      k.spot([AX, 7.5, 4], [AX, 2.6, -1.2], 0xe6f0ff, 150, 0.6); k.spot([0, 8, Z(620)], [0, 0, Z(640)], 0xd8e8ff, 130, 0.8); k.spot([0, 8, Z(330)], [-1, 0, Z(300)], 0xbfe0ff, 110, 0.9);
+      k.pool(0, Z(640), 3.5, 0x8fc8ff, 0.3); k.pool(X(260), Z(300), 4.5, 0x3f9bff, 0.35); k.pool(X(500), Z(300), 4, 0x3f9bff, 0.3); k.pool(X(230), Z(650), 3.5, 0x4fa0ff, 0.3); k.pool(AX, -2.5, 3.5, 0x6fb0ff, 0.25);
     },
   };
 };

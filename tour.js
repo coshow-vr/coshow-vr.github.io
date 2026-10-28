@@ -579,7 +579,7 @@ const DETAIL = {
 // 부스 3D 나눠 짓기: site/booths/<키>.js 가 export default (api) => ({ '부스이름'(g, W, D, carpet, slope) {…} })
 const BOOTH_MODS = ['bio', 'battery', 'bigdata', 'car', 'comm', 'display', 'drone', 'ecoup', 'energy', 'greenbio', 'iot', 'media', 'security', 'sobu', 'ai', 'nano'];
 { const api = { THREE, M, E, B, IMG, GLOW, box, boxXZ, floorPlane, panel, canvasTex, textTex, sign, atlas, beam, pool, truss, pixWall, pixBlock, tex, B3, boothKit, figure, CHAIR, BEAN, FONT, LOW, TILE_COL, mergeGeometries };
-  const rs = await Promise.allSettled(BOOTH_MODS.map(k => import(`./booths/${k}.js?v=11`).catch(() => import(`./booths/${k}.js?v=11&r=1`))));   // 한 번 못 받으면 다시
+  const rs = await Promise.allSettled(BOOTH_MODS.map(k => import(`./booths/${k}.js?v=12`).catch(() => import(`./booths/${k}.js?v=12&r=1`))));   // 한 번 못 받으면 다시
   rs.forEach((r, i) => { if (r.status === 'fulfilled') { try { Object.assign(DETAIL, r.value.default(api)); } catch (e) { console.warn('부스', BOOTH_MODS[i], e); } } }); }
 TOP.forEach((b, i) => addBooth(b, 'T', i));
 BOT.forEach((b, i) => addBooth(b, 'B', i + 1));
