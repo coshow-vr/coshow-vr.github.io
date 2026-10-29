@@ -353,20 +353,18 @@ floorPlane(HALL.x0, HALL.x1, HALL.z0, HALL.z1, M(0x6f86c0, { map: ceilTex, side:
 })();
 for (let x = -60; x <= 60; x += 20) boxXZ(x - .3, x + .3, HALL.z0, HALL.z1, .5, M(0x2a3350), 10.5, walkOnly);
 
-// 바닥 동선 (10. 22.): 마름모 4줄 64 m × 1 m 무지개 띠 + 꼭짓점 이정표 4개(2 m)
+// 바닥 동선 (10. 28. 승인서): 마름모 4줄 64 m × 1 m 파란 띠(분야 5줄 · 부스 원 + 화살표) + 꼭짓점 이정표 A ~ D(2 m)
 const DIA = { L: [-64.9, CZ], R: [64.9, CZ], T: [0, -35.66], Bt: [0, -24.64] };   // 실측 꼭짓점 원 Φ2 m
 (function diamond() {
   const { L, R, T, Bt } = DIA;
   const sh = new THREE.Shape(); sh.moveTo(L[0], -L[1]); sh.lineTo(T[0], -T[1]); sh.lineTo(R[0], -R[1]); sh.lineTo(Bt[0], -Bt[1]); sh.closePath();
   const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), M(0x8a96ad, { roughness: .35 })); m.rotation.x = -Math.PI / 2; m.position.y = 0.07; scene.add(m);
-  const rainbow = ['#ff5a5a', '#ffb23a', '#ffe14a', '#4fd16b', '#3fa8ff'];
-  [[L, T], [T, R], [R, Bt], [Bt, L]].forEach(([a, b]) => rainbow.forEach((c, i) => {
-    const dx = b[0] - a[0], dz = b[1] - a[1], len = Math.hypot(dx, dz), nx = -dz / len, nz = dx / len, off = (i - 2) * 0.2;
-    const s = new THREE.Mesh(new THREE.BoxGeometry(len, 0.03, 0.2), M(c, { roughness: .8, envMapIntensity: .9 }));   // 파이텍스 인쇄 (빛 안 남)
-    s.position.set((a[0] + b[0]) / 2 + nx * off, 0.09, (a[1] + b[1]) / 2 + nz * off); s.rotation.y = -Math.atan2(dz, dx); scene.add(s);
-  }));
-  const mark = canvasTex(256, 256, (g) => { g.fillStyle = '#0b1440'; g.beginPath(); g.arc(128, 128, 124, 0, 7); g.fill(); g.strokeStyle = '#2fe4ff'; g.lineWidth = 10; g.beginPath(); g.arc(128, 128, 104, 0, 7); g.stroke(); fitText(g, ['CO-SHOW'], 256, 256, 44); });
-  Object.values(DIA).forEach(([x, z]) => { const d = new THREE.Mesh(new THREE.CircleGeometry(1, 40), M(0xffffff, { map: mark, roughness: .8, envMapIntensity: .9 })); d.rotation.x = -Math.PI / 2; d.position.set(x, 0.11, z); scene.add(d); });
+  // 띠 그림 = 승인서 4쪽을 잘라 16 m씩 4조각 (평면도 방향 그대로: 왼 → 오, 그림 위 = 위쪽 부스 줄). ① B→C ② A→D ③ C→D ④ B→A
+  [[1, L, T], [2, Bt, R], [3, T, R], [4, L, Bt]].forEach(([n, a, b]) => {
+    const dx = b[0] - a[0], dz = b[1] - a[1], q = new THREE.Group(); q.position.set((a[0] + b[0]) / 2, 0.09, (a[1] + b[1]) / 2); q.rotation.y = -Math.atan2(dz, dx); scene.add(q);
+    for (let j = 0; j < 4; j++) { const s = new THREE.Mesh(new THREE.PlaneGeometry(16, 1), M(0xffffff, { map: tex(`img/n_floor28_s${n}_${j}.jpg`), roughness: .8, envMapIntensity: .9 })); s.rotation.x = -Math.PI / 2; s.position.x = -24 + j * 16; q.add(s); }   // 파이텍스 인쇄 (빛 안 남)
+  });
+  [['A', Bt], ['B', L], ['C', T], ['D', R]].forEach(([n, [x, z]]) => { const d = new THREE.Mesh(new THREE.CircleGeometry(1, 48), M(0xffffff, { map: tex(`img/n_floor28_${n}.jpg`), roughness: .8, envMapIntensity: .9 })); d.rotation.x = -Math.PI / 2; d.position.set(x, 0.11, z); scene.add(d); });
 })();
 
 // 부스 18개 (이름·순서 = 바닥동선 10. 22. · 자리·크기 = 0915-1 사이즈실측, 사다리꼴: 앞선이 마름모 통로 따라 기욺)
@@ -381,7 +379,7 @@ const booths = [];
 // 컨소시엄 부스 시안 (99.전시장시안/CO-SHOW_컨소시엄_부스시안_1027) · 바닥·벽 색은 시안 그림 보고 고름
 const BS = {
   '빅데이터': ['bigdata', 3, '빅데이터_앞 · 좌측 · 우측.pdf (오토데스크 3D 도면 링크 있음)', 0x55743a, 0x2c3a26],
-  '차세대반도체': ['semi', 7, '(변경)차세대반도체 시안_20261022', 0x1f4fd8, 0x15171f],
+  '차세대반도체': ['semi', 7, '차세대반도체 시안_20261029', 0x1f4fd8, 0x15171f],
   '미래자동차': ['car', 5, '미래자동차컨소시엄 부스 · 부스 배치도', 0x2e3138, 0x15171f],
   '바이오헬스': ['bio', 7, '바이오헬스 시안 (1027 폴더 · 1019판은 이전판)', 0x2a3f9a, 0xeef2f8],
   '실감미디어': ['media', 7, '실감미디어 시안 (10. 12.)', 0x2346c8, 0x1b2030],
@@ -469,66 +467,6 @@ function figure(p, x, z, m, s = 1) {                                            
   const h = new THREE.Mesh(new THREE.SphereGeometry(0.13 * s, 12, 10), m); h.position.set(x, 1.62 * s, z); p.add(h);
 }
 const DETAIL = {
-  '차세대반도체'(g, W, D, carpet, slope) {
-    const k = boothKit(g, slope), fr = k.fr, blk = M(0x111318, { roughness: .45 }), wht = M(0xf3f5f9, { roughness: .6 }), blu = E(0x2f8bff, 2.4);
-    carpet.material = M(0x1f4fd8, { roughness: .9 });
-    const IN = -8.6;                                                          // 이 줄 안쪽 = MCU 경진대회장 (검정 바닥 · 검정 벽 · 파란 빛줄)
-    k.flat(M(0x0c0d12, { roughness: .8 }), -W, W, -D, IN);
-    k.bxz(-W, W, -D - 0.2, -D, 3.6, blk); k.bxz(-W, W, -D - 0.21, -D + 0.04, 0.06, blu, 3.55);
-    [-1, 1].forEach(s => { const x = s * W; k.bxz(x - 0.1, x + 0.1, -D, IN, 3.6, blk); k.bxz(x - 0.11, x + 0.11, -D, IN, 0.06, blu, 3.55); k.bxz(x - 0.11, x + 0.11, IN - 0.06, IN, 3.6, blu); });
-    [-5, 0, 5].forEach(x => k.pl(GLOW(B3('semi_back'), 1.1), 4.3, 2.6, x, 2.0, -D + 0.01));
-    // 경진대회 칸 10개 (번호판 01 ~ 10)
-    const plate = n => canvasTex(512, 128, (c, w, h) => { c.fillStyle = '#0b0d14'; c.fillRect(0, 0, w, h); c.fillStyle = '#fff'; c.textBaseline = 'middle'; c.font = `700 24px ${FONT}`; c.fillText('2026 COSS 차세대반도체', 18, 44); c.font = `500 20px ${FONT}`; c.fillText('Microcontroller(MCU) 응용경진대회', 18, 82); c.font = `900 88px ${FONT}`; c.textAlign = 'right'; c.fillText(n, w - 14, h / 2 + 4); });
-    const grid = canvasTex(256, 256, (c, w, h) => { c.strokeStyle = '#000'; c.lineWidth = 3; for (let i = 0; i <= 256; i += 21.3) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i, h); c.stroke(); c.beginPath(); c.moveTo(0, i); c.lineTo(w, i); c.stroke(); } });
-    const gridM = M(0x2a2d36, { map: grid, transparent: true, alphaTest: .4, side: THREE.DoubleSide }), desks = [], posts = [], lap = [], chs = [];
-    for (let r = 0; r < 2; r++) for (let c = 0; c < 5; c++) {
-      const x = -W + 1.5 + c * (2 * W - 3) / 4, z = -12 - r * 5.2;
-      desks.push([x, 0.375, z]); lap.push([x - 0.4, 0.87, z - 0.12], [x + 0.4, 0.87, z - 0.12]); chs.push([x - 0.4, 0, z + 0.7], [x + 0.4, 0, z + 0.7]);
-      [-0.9, 0.9].forEach(o => posts.push([x + o, 1.15, z - 0.45]));
-      k.pl(gridM, 1.8, 1.5, x, 1.45, z - 0.45);
-      k.box(1.84, 0.46, 0.06, blk, x, z - 0.45, 2.3);
-      k.pl(GLOW(plate(String(r * 5 + c + 1).padStart(2, '0')), 1.0), 1.8, 0.45, x, 2.53, z - 0.41);
-    }
-    k.inst(new THREE.BoxGeometry(1.7, 0.75, 0.7), wht, desks);
-    k.inst(new THREE.BoxGeometry(0.05, 2.3, 0.05), blk, posts);
-    k.inst(new THREE.BoxGeometry(0.34, 0.22, 0.02), new THREE.MeshStandardMaterial({ color: 0x050812, emissive: 0x3a7dff, emissiveIntensity: .8 }), lap);
-    k.inst(CHAIR, blk, chs);
-    // 가운데 검정 벽: 차세대반도체 간판 · POLARIS 화면 · 인피니티 미러 안내데스크
-    k.box(5.6, 5.2, 0.7, blk, 0, -7.2); k.box(5.62, 0.05, 0.72, blu, 0, -7.2, 5.15);
-    k.pl(GLOW(B3('semi_head'), 1.0), 4.6, 0.87, 0, 4.4, -6.84);
-    k.pl(GLOW(B3('semi_tv'), 1.05), 3.7, 2.13, 0, 2.75, -6.84);
-    k.box(5.0, 1.05, 0.9, blk, 0, -5.6); k.pl(GLOW(B3('semi_desk'), 1.0), 4.8, 0.92, 0, 0.53, -5.14);
-    k.inst(new THREE.BoxGeometry(0.38, 0.26, 0.03), M(0x1a1c22), [[-0.9, 1.18, -5.75], [0.5, 1.18, -5.75]]);
-    // 앞 머리 간판 (검정 띠 · 하늘색 네온 글자)
-    const hd = canvasTex(2048, 160, (c, w, h) => {
-      c.fillStyle = '#0c0d12'; c.fillRect(0, 0, w, h); c.textBaseline = 'middle';
-      c.shadowColor = '#2fd8ff'; c.shadowBlur = 18; c.fillStyle = '#6ff0ff'; c.font = `900 84px ${FONT}`; c.fillText('차세대반도체', 40, 60); c.shadowBlur = 0;
-      c.fillStyle = '#fff'; c.font = `700 34px ${FONT}`; c.fillText('Next Generation Semiconductor', 44, 128);
-      c.fillStyle = '#2fd8ff'; c.fillRect(720, 76, 800, 7);
-      c.textAlign = 'right'; c.fillStyle = '#fff'; c.font = `600 30px ${FONT}`; c.fillText('차세대 반도체 혁신융합대학 사업단', w - 40, 36); c.font = `900 86px Georgia,serif`; c.fillText('POLARIS', w - 40, 108);
-    });
-    k.box(2 * W + 0.3, 1.2, 0.4, blk, 0, -1.3, 4.6, fr); k.pl(GLOW(hd, 1.05), 2 * W, 1.0, 0, 5.2, -1.09, 0, fr);
-    [-1, 1].forEach(s => k.box(0.4, 4.6, 0.4, blk, s * W, -1.3, 0, fr));
-    // 왼쪽 앞: 매다는 LED 큐브(북극곰) · 테이블 · 북극곰 조형
-    k.cube(-W + 3.4, -4.8, 6.0, 3.0, [B3('semi_cube')]);
-    k.inst(new THREE.BoxGeometry(0.9, 0.75, 0.9), wht, [[-W + 2.6, 0.375, -6.2], [-W + 4.6, 0.375, -6.2], [-W + 4.6, 0.375, -3.9]]);
-    k.inst(CHAIR, blk, [[-W + 2.6, 0, -5.5], [-W + 4.6, 0, -5.5], [-W + 4.6, 0, -3.2]]);
-    const bear = new THREE.Group(); bear.position.set(-W + 1.7, 0, -2.6); bear.rotation.y = 0.5; g.add(bear);
-    box(1.6, 0.35, 1.1, M(0xd6ecfa, { roughness: .25 }), 0, 0, 0, bear);
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.36, 0.8, 4, 12), wht); body.rotation.z = Math.PI / 2; body.position.set(0, 0.95, 0); bear.add(body);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 14, 12), wht); head.position.set(0.78, 1.05, 0); bear.add(head);
-    [[-.4, -.2], [-.4, .2], [.4, -.2], [.4, .2]].forEach(([a, b]) => box(0.2, 0.45, 0.2, wht, a, b, 0.35, bear));
-    // 오른쪽 앞: VR 4D 육각 체험관
-    const vr = new THREE.Group(); vr.position.set(W - 2.9, 0, -4.4); g.add(vr);
-    const hex = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 2.8, 6, 1, true), M(0x15171d, { roughness: .5, side: THREE.DoubleSide })); hex.rotation.y = Math.PI / 6; hex.position.y = 1.4; vr.add(hex);
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(2.13, 2.13, 0.06, 6, 1, true), blu); top.rotation.y = Math.PI / 6; top.position.y = 2.8; vr.add(top);
-    const vt = k.txt(['VR 4D'], 1.6, 0.5, { fg: '#fff', size: 220 }, 1.05); vt.position.set(-0.4, 2.25, 1.83); vr.add(vt);
-    k.pl(GLOW(B3('semi_tv'), 1.0), 1.0, 0.58, 0.55, 1.35, 1.83, 0, vr);
-    [-0.5, 0.5].forEach(x => { box(0.6, 0.6, 0.7, wht, x, 0, 0.3, vr); box(0.6, 0.6, 0.12, wht, x, -0.3, 0.9, vr); });
-    // 조명 (부스 자체)
-    k.spot([0, 7.5, -1.8], [0, 2.6, -6.9], 0xe8f0ff, 140, 0.55);
-    k.pool(0, -4.5, 3.5, 0x9fd0ff, 0.35); k.pool(-W + 3.4, -4.8, 3, 0x5fb8ff, 0.4); k.pool(0, -14.6, 6.5, 0x5a8cff, 0.22);
-  },
   '지능형로봇'(g, W, D, carpet, slope) {
     const k = boothKit(g, slope), fr = k.fr, blk = M(0x0d0f15, { roughness: .5 }), wl = E(0xe8f0ff, 0.9);
     carpet.material = M(0x121419, { roughness: .9 });
@@ -577,9 +515,9 @@ const DETAIL = {
   },
 };
 // 부스 3D 나눠 짓기: site/booths/<키>.js 가 export default (api) => ({ '부스이름'(g, W, D, carpet, slope) {…} })
-const BOOTH_MODS = ['bio', 'battery', 'bigdata', 'car', 'comm', 'display', 'drone', 'ecoup', 'energy', 'greenbio', 'iot', 'media', 'security', 'sobu', 'ai', 'nano'];
+const BOOTH_MODS = ['semi', 'bio', 'battery', 'bigdata', 'car', 'comm', 'display', 'drone', 'ecoup', 'energy', 'greenbio', 'iot', 'media', 'security', 'sobu', 'ai', 'nano'];
 { const api = { THREE, M, E, B, IMG, GLOW, box, boxXZ, floorPlane, panel, canvasTex, textTex, sign, atlas, beam, pool, truss, pixWall, pixBlock, tex, B3, boothKit, figure, CHAIR, BEAN, FONT, LOW, TILE_COL, mergeGeometries };
-  const rs = await Promise.allSettled(BOOTH_MODS.map(k => import(`./booths/${k}.js?v=12`).catch(() => import(`./booths/${k}.js?v=12&r=1`))));   // 한 번 못 받으면 다시
+  const rs = await Promise.allSettled(BOOTH_MODS.map(k => import(`./booths/${k}.js?v=15`).catch(() => import(`./booths/${k}.js?v=15&r=1`))));   // 한 번 못 받으면 다시
   rs.forEach((r, i) => { if (r.status === 'fulfilled') { try { Object.assign(DETAIL, r.value.default(api)); } catch (e) { console.warn('부스', BOOTH_MODS[i], e); } } }); }
 TOP.forEach((b, i) => addBooth(b, 'T', i));
 BOT.forEach((b, i) => addBooth(b, 'B', i + 1));
@@ -1182,7 +1120,7 @@ const HOT = [
  { n: '6', c: 'y', t: '빵빠레 배너', z: '로비 · 2층 난간 전체', p: [-40, 7.8, RAIL_Z], more: [[40, 7.8, RAIL_Z]], st: [-40, 25], desc: '0.6 × 0.9 m (2종 5조 · 4조)', img: [['n_env_10', '빵빠레 배너']], src: '00.환경장식물 제작승인서_1022' },
  { n: '7', c: 'y', t: '로비 기둥 현수막', z: '로비 · 기둥 9개', p: [12.1, 8.4, colZ(12.1)], more: [[-35.9, 8.4, colZ(-35.9)], [48.1, 8.4, colZ(48.1)]], st: [12.1, 27], desc: '2.5 × 4.5 m 9개 · 10. 28. 기둥 싸바리 시안 목업 (한 바퀴 네 면)', img: [['n_env_11', '로비 기둥 현수막'], ['n_env_02', '배치도']], src: '00.환경장식물 제작승인서_1022' },
  { n: '8', c: 'y', t: '전시장 내부 트러스 배너', z: '전시장 · 가운데 줄', p: [-25.75, 10, CZ], more: [[25.75, 10, CZ]], st: [-38, CZ], desc: '1.2 × 3 m 20개 · 6 m 간격', img: [['n_env_12', '트러스 배너 20개']], src: '00.환경장식물 제작승인서_1022' },
- { n: '●', c: 'c', t: '바닥 동선', z: '전시장 · 마름모 통로', p: [-40, 2.4, -32.7], st: [-30, CZ], desc: '바닥 이정표 파이텍스 64 × 1 m 4줄 · 꼭짓점 포맥스 2 × 2 m 4개', img: [['n_floor_01', '투시도'], ['n_floor_02', '바닥 이정표 배치']], src: '2026 CO-SHOW 바닥동선_1022' },
+ { n: '●', c: 'c', t: '바닥 동선', z: '전시장 · 마름모 통로', p: [-40, 2.4, -32.7], st: [-30, CZ], desc: '바닥 이정표 파이텍스 64 × 1 m 4줄(분야 5줄 · 부스 원 + 화살표) · 꼭짓점 파이텍스 2 × 2 m 4개(A ~ D)', img: [['n_floor28_persp', '투시도 (10. 28.)'], ['n_floor28_layout', '바닥 이정표 배치 (10. 28.)'], ['n_floor28_strip', '띠 그래픽 ① ~ ④'], ['n_floor28_sign', '꼭짓점 이정표 A ~ D']], src: '06.내부 휴게공간_내부 바닥동선 제작승인서_1028' },
  { n: '●', c: 'c', t: '컨소시엄 부스 18개', z: '전시장 A · B · C홀', p: [36, 5.5, -45], st: [36, CZ], desc: '18개 컨소시엄 부스 자리 · 크기 (실측 도면, 부스마다 약 350 ㎡). 18곳 모두 부스 시안(1027) 보고 3D로 지음 (인공지능 · 첨단소재나노융합은 시안 없어 개략)', img: [['n_floor_02', '부스 순서 · 바닥 이정표']], src: '부스 순서: 바닥동선_1022 · 크기: 0915-1 사이즈실측' },
  { n: '●', c: 'c', t: '5 m 머리하트 코아이', z: '로비 · GATE 1 밖', p: [99, 5.8, 28], st: [107, 22], desc: '높이 5 m · 두 손 볼 · 머리 위 분홍 하트 (모양 = 실물 사진 10. 28., 자리 = 공간조성계획 10. 15.)', img: [['p_coai1', '실물 사진 (5 m 머리하트)'], ['p_facade1', 'GATE 1 쪽 외관']], src: '2026 CO-SHOW 공간조성계획_1015' },
  { n: '●', c: 'c', t: '3 m 코아이', z: '로비 · A → B홀 사이', p: [18, 3.6, 26], st: [18, 18], desc: '높이 3 m · 서서 손 흔듦 (모양 = 실물 사진 10. 28., 자리 = 공간조성계획 10. 15.)', img: [['p_coai2', '실물 사진 (3 m)']], src: '2026 CO-SHOW 공간조성계획_1015' },
@@ -1366,7 +1304,7 @@ const TOUR = [
   [[0, -21], [0, 3.5, CZ], '구 LED · 코아이 공기인형', '06 내부 휴게공간'],
   [[-20, -28.5], [-10.7, 0.6, CZ], '파레트 휴게공간', '06 내부 휴게공간'],
   [[-19.5, -27.4], [-11.5, 2.4, -17.5], '지능형로봇 부스', 'LED 아치 · 4족 로봇 경기장 · 교육석'],
-  [[-28.2, -33.5], [-28.2, 3.2, -17], '차세대반도체 부스', 'POLARIS · LED 큐브 · VR 4D · MCU 경진대회'],
+  [[-28.2, -33.5], [-28.2, 3.2, -17], '차세대반도체 부스', '북극곰 · LED 큐브 · VR 시뮬레이터 · MCU 경진대회'],
   [[-57.5, -31.8], [-63.5, 2.4, -19], '바이오헬스 부스', '곡선 간판 · 곡선 LED · 처방 데스크 · 세 센터 게이트'],
   [[GC.C, -4], [GC.C, 2.5, 10], '전시장 C홀 → 로비', ''],
   [[-51.5, 15.5], [-57.1, 1.4, 15], '로고 조형물', '05 로고 조형물'],
