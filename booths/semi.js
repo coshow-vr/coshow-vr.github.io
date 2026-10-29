@@ -98,8 +98,8 @@ export default ({ THREE, M, E, GLOW, canvasTex, B3, boothKit, CHAIR, BEAN, FONT,
     const circM = GLOW(B3('semi2_circ'), 1.0), circW = GLOW(circ(1024, 256, false, 7), 1.0);
     { const x1 = X(310); box(x1 + W, 1.2, 0.3, blk, (x1 - W) / 2, -0.25, 0, fr);
       k.pl(circM, x1 + W - 0.1, 1.08, (x1 - W) / 2, 0.6, -0.09, 0, fr); k.pl(circW, x1 + W - 0.1, 1.08, (x1 - W) / 2, 0.6, -0.41, Math.PI, fr); }
-    { const z0 = ZH0, z1 = k.fz(-W) - 0.4; k.bxz(-W - 0.05, -W + 0.2, z0, z1, 1.6, blk);
-      k.pl(GLOW(circ(1024, 220, false, 3), 1.0), z1 - z0 - 0.1, 1.4, -W + 0.21, 0.8, (z0 + z1) / 2, Math.PI / 2); }
+    { const z0 = ZH0, z1 = k.fz(-W) - 0.4; k.bxz(-W - 0.05, -W + 0.2, z0, z1, 1.2, blk);       // 앞 왼쪽 옆벽도 앞 낮은 벽과 같은 높이
+      k.pl(GLOW(circ(1024, 160, false, 3), 1.0), z1 - z0 - 0.1, 1.08, -W + 0.21, 0.6, (z0 + z1) / 2, Math.PI / 2); }
 
     // ---------- 현미경 책상 5 (흰 책상 · 흰 A 틀 · 현미경 2 · 웨이퍼 판) ----------
     { const tabs = [[232, 1215], [408, 1215], [232, 1355], [408, 1355], [232, 1490]].map(([a, b]) => [X(a), Z(b)]);
@@ -155,7 +155,7 @@ export default ({ THREE, M, E, GLOW, canvasTex, B3, boothKit, CHAIR, BEAN, FONT,
         .forEach(([w, h, x, z, r, sd]) => { const m = new THREE.Mesh(shard(w, h, sd), sm); m.position.set(x, 0.2, z); m.rotation.y = r; ice.add(m); });
     }
     // 곰: 몸 = 타원체 · 둥근 원뿔을 부드럽게 합친 모양(마칭큐브) + 털 결 음영, 눈 · 코 · 입 · 발톱은 따로
-    const bear = new THREE.Group(); bear.position.set(-0.15, 0.33, 0.05); bear.rotation.y = -Math.PI / 2 - 0.12; bear.scale.setScalar(0.95); ice.add(bear);
+    const bear = new THREE.Group(); bear.position.set(-0.15, 0.33, 0.05); bear.rotation.y = -Math.PI / 2 + 0.12; bear.scale.setScalar(0.95); ice.add(bear);
     {
       const P = [];                                                                // [모양, …값, 합치는 정도]
       const El = (c, r, b = .12) => P.push([0, c, r, b]), Co = (a, ra, bb, rb, b = .08) => P.push([1, a, ra, bb, rb, b]);
@@ -238,11 +238,16 @@ export default ({ THREE, M, E, GLOW, canvasTex, B3, boothKit, CHAIR, BEAN, FONT,
     // ---------- 육각 키오스크 (가운데 VR 시뮬레이터) ----------
     { const hx = X(1012), hz = Z(1418), R = 2.3, A = R * Math.cos(Math.PI / 6), wa = 1.45;
       const hex = new THREE.Group(); hex.position.set(hx, 0, hz); g.add(hex);
-      { const r = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.15, R + 0.15, 0.32, 6, 1, false, Math.PI / 2), blk); r.position.y = 2.95; hex.add(r);
+      { const hx6 = (r, sh) => { for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; sh[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r); } sh.closePath(); return sh; };   // 지붕: 가운데가 뚫린 육각 테 (위에서 VR 의자가 보임, 이미지 114625)
+        const sh = hx6(R + 0.15, new THREE.Shape()); sh.holes.push(hx6(wa / Math.cos(Math.PI / 6) - 0.05, new THREE.Path()));
+        const rg = new THREE.ExtrudeGeometry(sh, { depth: 0.32, bevelEnabled: false }); rg.rotateX(-Math.PI / 2);
+        const r = new THREE.Mesh(rg, blk); r.position.y = 2.79; hex.add(r);
         const rim = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.16, R + 0.16, 0.03, 6, 1, true, Math.PI / 2), M(0x2a2d35)); rim.position.y = 2.8; hex.add(rim); }
+      // 면 방향(도): 90 = 앞(통로) · 30 = 앞 오른쪽 · 330 = 뒤 오른쪽 · 270 = 뒤 · 210 = 뒤 왼쪽 · 150 = 앞 왼쪽
+      // 시안 1 · 7번 = VR 시뮬레이터가 통로 정면, 9번 = 실록이 뒤 면, 8번(가운데 통로 쪽) = AI 뒤 왼쪽 · 트랜지스터 앞 왼쪽, 10번(오른쪽 밖) = 역사 앞 오른쪽 · K-MOOC 뒤 오른쪽 (10. 29. 제욱님 "VR이 정면에 있어야")
       const faces = [                                                           // [방향(도), 벽 그림, 데스크 글자, 글자색]
-        [30, null], [90, 'semi2_k_mooc', ['반도체의 기초부터 심화까지,', '차세대반도체 K-MOOC 교과목'], '#ff6fb0'], [150, 'semi2_k_hist', ['반도체 발전 역사 (feat. 게임기)'], '#d9a8ff'],
-        [210, 'semi2_k_tr', ['트랜지스터 공작소'], '#46e6c8'], [270, 'semi2_k_ai', ['AI 강아지 탐정단'], '#ff7a6a'], [330, 'semi2_k_silok', ['실록이가 알려줄게!'], '#ffbf73']];
+        [90, null], [30, 'semi2_k_hist', ['반도체 발전 역사 (feat. 게임기)'], '#d9a8ff'], [330, 'semi2_k_mooc', ['반도체의 기초부터 심화까지,', '차세대반도체 K-MOOC 교과목'], '#ff6fb0'],
+        [270, 'semi2_k_silok', ['실록이가 알려줄게!'], '#ffbf73'], [210, 'semi2_k_ai', ['AI 강아지 탐정단'], '#ff7a6a'], [150, 'semi2_k_tr', ['트랜지스터 공작소'], '#46e6c8']];
       const grid = canvasTex(256, 256, (c, w, h) => { c.strokeStyle = '#000'; c.lineWidth = 4; for (let i = 0; i <= 256; i += 25.6) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i, h); c.stroke(); c.beginPath(); c.moveTo(0, i); c.lineTo(w, i); c.stroke(); } });
       grid.wrapS = grid.wrapT = THREE.RepeatWrapping; grid.repeat.set(3, 9);
       const gridM = M(0x2a2d36, { map: grid, transparent: true, alphaTest: .4, side: THREE.DoubleSide });
@@ -280,6 +285,15 @@ export default ({ THREE, M, E, GLOW, canvasTex, B3, boothKit, CHAIR, BEAN, FONT,
       k.inst(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 12), E(0xfff6e0, 3), lights.map(v => [hx + v.x, v.y, hz + v.z]));
     }
 
+    // ---------- VR 줄 서기 차단봉 (평면 22번 오른쪽 아래 기둥 8개 · 시안 1 · 8 · 10번 파란 띠, 앞 통로까지 나옴) ----------
+    { const P = [[925, 1625], [1035, 1625], [925, 1715], [1035, 1715], [1130, 1715], [925, 1805], [1025, 1805], [1120, 1805]].map(([a, b]) => [X(a), Z(b)]);
+      k.inst(new THREE.CylinderGeometry(0.025, 0.025, 0.95, 10).translate(0, 0.475, 0), gry, P.map(([x, z]) => [x, 0, z]));
+      k.inst(new THREE.CylinderGeometry(0.16, 0.16, 0.03, 18), gry, P.map(([x, z]) => [x, 0.015, z]));
+      const belt = E(0x1f6dff, 1.2);
+      [[0, 2], [2, 5], [1, 3], [3, 4], [5, 6], [6, 7]].forEach(([a, b]) => { const [x0, z0] = P[a], [x1, z1] = P[b], L = Math.hypot(x1 - x0, z1 - z0);
+        const m = box(L, 0.05, 0.012, belt, (x0 + x1) / 2, (z0 + z1) / 2, 0.86); m.rotation.y = -Math.atan2(z1 - z0, x1 - x0); });
+    }
+
     // ---------- 휴게 (빈백 4 · 과자 진열대 · 전자레인지 · 커피통 · 정수기) ----------
     { const x1 = X(420), z0 = Z(940), zf = ZH0 - 0.1;
       box(x1 + W, 1.1, 0.12, blk, (x1 - W) / 2, zf - 0.06); k.pl(GLOW(circ(1024, 160, false, 11), 1.0), x1 + W - 0.1, 1.0, (x1 - W) / 2, 0.55, zf + 0.005);
@@ -311,8 +325,10 @@ export default ({ THREE, M, E, GLOW, canvasTex, B3, boothKit, CHAIR, BEAN, FONT,
     k.bxz(-W - 0.05, W + 0.05, -D - 0.25, -D, 3.3, blk); box(2 * W + 0.1, 0.05, 0.03, blu, 0, -D + 0.01, 3.22);
     k.pl(GLOW(circ(2048, 360, false, 21), 0.95), 2 * W - 0.3, 2.6, 0, 1.75, -D + 0.01);
     box(4.9, 2.75, 0.12, M(0x05060a), 0, -D + 0.06, 0.45); k.pl(GLOW(B3('semi2_bear'), 1.15), 4.7, 2.6, 0, 1.75, -D + 0.125);
-    [-1, 1].forEach(s => { k.bxz(s * W - 0.12, s * W + 0.12, -D, ZH1, 3.3, blk); box(0.03, 0.05, ZH1 + D, blu, s * (W - 0.13), (ZH1 - D) / 2, 3.22);
-      const zA = -D + 0.3, zB = Z(930) - 0.2; k.pl(GLOW(circ(1536, 360, false, s > 0 ? 31 : 41), 0.95), zB - zA, 2.6, s * (W - 0.13), 1.75, (zA + zB) / 2, -s * Math.PI / 2); });
+    // 옆벽: 뒤 칸 양옆은 낮은 열린 벽(약 1 m, 안쪽 회로 LED) + 뒷벽 끝 기둥만 높게 (시안 24번 옆 입면 · 3번 조감, 10. 29. 제욱님 "좌우벽이 너무 크다, 낮게 오픈형")
+    [-1, 1].forEach(s => { k.bxz(s * W - 0.12, s * W + 0.12, -D, ZH1, 1.0, blk); box(0.03, 0.04, ZH1 + D, blu, s * (W - 0.13), (ZH1 - D) / 2, 0.98);
+      k.bxz(s * W - 0.12, s * W + 0.12, -D, -D + 1.1, 3.3, blk);
+      const zA = -D + 1.2, zB = ZH1 - 0.1; k.pl(GLOW(circ(1536, 120, false, s > 0 ? 31 : 41), 0.95), zB - zA, 0.8, s * (W - 0.13), 0.5, (zA + zB) / 2, -s * Math.PI / 2); });
 
     // ---------- MCU 경진대회 팀 부스 12 (번호 · 팀 이름은 시안 15 · 16 · 18 · 19번에서 읽힌 것만) ----------
     { const NAME = { 1: 'Out of Memory', 2: 'Sodapop', 3: 'StackOverflow', 4: 'Z.Y.M', 6: '뚜벅이', 7: '백만볼트', 10: '매직아이', 11: '당탕탕 리모컨' };
