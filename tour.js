@@ -557,44 +557,70 @@ SPH.position.set(0, 0.385 + 1.5, CZ); scene.add(SPH);
 const disc = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 0.385, 48), M(0x0b0d18, { roughness: .4 })); disc.position.set(0, 0.1925, CZ); scene.add(disc);
 const ringL = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.05, 8, 64), E(0x2fe4ff, 2)); ringL.rotation.x = Math.PI / 2; ringL.position.set(0, 0.39, CZ); scene.add(ringL);
 const ring = new THREE.Mesh(new THREE.TorusGeometry(7, 0.25, 8, 64), M(0x30364a, { metalness: .6, roughness: .4, envMapIntensity: .4 })); ring.rotation.x = Math.PI / 2; ring.position.set(0, 9.5, CZ); scene.add(ring);
-// B 파레트 휴게공간 8,800 × 6,600 × 1,050 (2곳, 빈백 40개)
+// B 파레트 휴게공간 8,800 × 6,600 × 1,050 (2곳, 빈백 40개) — 승인서 9쪽 칸별 단수 그대로 (1단 = 0.15 m, 파랑 = 파란 파레트)
+const PAL_STEP = [[0, 1, 2, 3, 3, 2, 1, 0], [2, 3, 4, 5, 5, 4, 3, 2], [4, 5, 6, 7, 7, 6, 5, 4], [4, 5, 6, 7, 7, 6, 5, 4], [2, 3, 4, 5, 5, 4, 3, 2], [0, 1, 2, 3, 3, 2, 1, 0]];
+const PAL_BLUE = ['0,1', '0,6', '1,2', '1,5', '2,0', '2,3', '2,7', '3,1', '3,4', '3,6', '4,2', '4,5', '5,1', '5,6'];
+const palBlueBase = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#123a9c'; g.fillRect(0, 0, w, h); g.strokeStyle = '#2f6cf0'; g.lineWidth = 6;
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { g.strokeRect(i * 128 + 10, j * 128 + 10, 108, 108); g.beginPath(); g.moveTo(i * 128 + 10, j * 128 + 10); g.lineTo(i * 128 + 118, j * 128 + 118); g.stroke(); }
+});
+palBlueBase.wrapS = palBlueBase.wrapT = THREE.RepeatWrapping;
+const PALB = {};
+const palBlueMat = n => PALB[n] || (PALB[n] = (() => { const t = palBlueBase.clone(); t.repeat.set(1, n); t.needsUpdate = true; return M(0xffffff, { map: t, roughness: .5 }); })());
 function palletRest(cx) {
-  const pm = M(0x16192a, { roughness: .6 });
-  [[8.8, 6.6], [6.6, 4.4], [4.4, 2.2]].forEach(([w, d], i) => { box(w, 0.35, d, pm, cx, CZ, i * 0.35); boxXZ(cx - w / 2, cx + w / 2, CZ + d / 2 - 0.03, CZ + d / 2 + 0.03, 0.04, cyanM, i * 0.35 + 0.33); });
-  const bean = new THREE.SphereGeometry(0.42, 16, 12), w1 = M(0xe9ecf2, { roughness: .9 }), b1 = M(0x1f4fd8, { roughness: .8 });
-  const spots = [];
-  for (let i = 0; i < 7; i++) { spots.push([cx - 3.9 + i * 1.3, CZ - 2.95, 0.35]); spots.push([cx - 3.9 + i * 1.3, CZ + 2.95, 0.35]); }
-  for (let i = 0; i < 3; i++) { spots.push([cx - 3.9, CZ - 1.2 + i * 1.2, 0.35]); }
-  for (let i = 0; i < 3; i++) spots.push([cx - 2.2 + i * 2.2, CZ - 1.8, 0.7]);
-  spots.forEach(([x, z, y], i) => { const s = new THREE.Mesh(bean, i % 3 ? w1 : b1); s.scale.set(1, 0.6, 1.1); s.position.set(x, y + 0.25, z); scene.add(s); });
+  const cell = (r, c) => [cx + (c - 3.5) * 1.1, CZ + (r - 2.5) * 1.1];
+  PAL_STEP.forEach((row, r) => row.forEach((n, c) => {
+    if (!n) return; const [x, z] = cell(r, c), h = n * 0.15;
+    box(1.08, h, 1.08, PAL_BLUE.includes(r + ',' + c) ? palBlueMat(n) : palMat(1, n), x, z, 0);
+    // 낮은 이웃 쪽 윗모서리에 하늘색 띠 (투시도 3 · 4쪽)
+    [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => { const m = PAL_STEP[r + dr]?.[c + dc] ?? 0; if (m >= n) return;
+      if (dr) boxXZ(x - .54, x + .54, z + dr * .54 - .02, z + dr * .54 + .02, 0.03, cyanM, h - 0.04); else boxXZ(x + dc * .54 - .02, x + dc * .54 + .02, z - .54, z + .54, 0.03, cyanM, h - 0.04); });
+  }));
+  // 빈백 20개 (파랑 · 회색, 자리는 유나 판단)
+  const bean = new THREE.SphereGeometry(0.42, 16, 12), gw = M(0xc9ced8, { roughness: .95 }), b1 = M(0x1f4fd8, { roughness: .8 });
+  [[0, 2], [0, 5], [1, 0], [1, 3], [1, 6], [1, 7], [2, 1], [2, 4], [2, 6], [3, 0], [3, 3], [3, 5], [3, 7], [4, 1], [4, 4], [4, 6], [5, 2], [5, 4], [0, 3], [5, 5]].forEach(([r, c], i) => {
+    const [x, z] = cell(r, c), s = new THREE.Mesh(bean, i % 2 ? gw : b1); s.scale.set(1.05, 0.62, 1.15); s.rotation.y = i * 0.7; s.position.set(x, PAL_STEP[r][c] * 0.15 + 0.24, z); scene.add(s);
+  });
 }
 palletRest(-10.7); palletRest(10.7);
-// C 파레트 타워 1,400 × 1,400 × 3,300 + 65인치 TV (2곳)
+// C 파레트 타워 1,400 × 1,100 × 3,300 (2곳) — 승인서 10쪽: 앞뒤(남 · 북) = 기둥 그래픽 840 × 1,470, 좌우(동 · 서) = 65인치 TV 세로
+const towerGfx = tex('img/n_ex_tower_gfx.jpg');
 function palletTower(x) {
-  box(1.4, 3.3, 1.4, palMat(1.4, 3.3), x, CZ, 0);
-  [1, -1].forEach(s => { const tv = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.64), new THREE.MeshBasicMaterial({ map: ledTex('2026 CO-SHOW', '', { w: 512, h: 300 }), toneMapped: false })); tv.position.set(x, 2.6, CZ + s * 0.71); tv.rotation.y = s > 0 ? 0 : Math.PI; scene.add(tv);
-    panel(T_FRONT, 0.6, 1.8, x + s * 0.71, 1.4, CZ, s * Math.PI / 2); });
-  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(0.05, 3.3, 0.05, cyanM, x + a * 0.72, CZ + b * 0.72, 0));
+  box(1.4, 3.3, 1.1, palMat(1.3, 3), x, CZ, 0);
+  [1, -1].forEach(s => {
+    panel(towerGfx, 0.84, 1.47, x, 1.72, CZ + s * 0.556, s > 0 ? 0 : Math.PI);
+    box(0.84, 1.45, 0.06, M(0x08090d), x + s * 0.72, CZ, 1.0).rotation.y = Math.PI / 2;
+    const tv = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 1.42), new THREE.MeshBasicMaterial({ map: ledTex('2026', 'CO-SHOW', { w: 300, h: 512 }), toneMapped: false }));
+    tv.position.set(x + s * 0.755, 1.73, CZ); tv.rotation.y = s * Math.PI / 2; scene.add(tv);
+    [-0.35, 0, 0.35].forEach(o => { box(0.02, 0.5, 0.02, cyanM, x + s * 0.705, CZ + o, 2.55); box(0.02, 0.5, 0.02, cyanM, x + s * 0.705, CZ + o, 0.35); });
+  });
 }
 palletTower(-31); palletTower(31);
-// D 현위치 현황판 900 × 1,780 (2곳, 그래픽 미확인)
-const boardTex = canvasTex(256, 512, (g, w, h) => { g.fillStyle = '#0b1440'; g.fillRect(0, 0, w, h); fitText(g, ['2026', 'CO-SHOW'], w, h * 0.3, 46); g.fillStyle = '#26347e'; for (let i = 0; i < 6; i++) g.fillRect(20, h * 0.32 + i * 52, w - 40, 40); fitText(g, ['현위치'], w, h * 1.82, 34, '#2fe4ff'); });
+// D 현위치 현황판 900 × 1,780 A형 (2곳) — 승인서 11쪽: 면이 남 · 북을 봄, 그래픽 = 행사 지도 + 체험교육 목록
+const boardGfx = tex('img/n_ex_board_gfx.jpg');
 function board(x) {
-  const g = new THREE.Group(); g.position.set(x, 0, CZ); g.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2; scene.add(g);
-  [1, -1].forEach(s => { const p = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.8), IMG(boardTex)); p.position.set(0, 0.89, s * 0.25); p.rotation.x = -s * 0.29; if (s < 0) p.rotation.y = Math.PI; g.add(p); });
+  const g = new THREE.Group(); g.position.set(x, 0, CZ); scene.add(g);
+  [1, -1].forEach(s => { const p = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.84), IMG(boardGfx)); p.position.set(0, 0.89, s * 0.25); p.rotation.x = -s * 0.274; if (s < 0) p.rotation.y = Math.PI; g.add(p);
+    const bk = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.84), M(0x0b1440)); bk.position.copy(p.position); bk.rotation.copy(p.rotation); bk.rotateY(Math.PI); bk.translateZ(0.01); g.add(bk); });
 }
-board(-52); board(52);
-// 주사위 스툴(검정·흰색) · 벤치 (Furniture Plan 개수 기준, 자리는 대략)
+board(-53.5); board(53.5);
+// 주사위 스툴 검정 40 · 흰색 40 · 벤치 16 (Furniture Plan 개수, 자리는 마름모 안쪽에 대략 = 유나 판단)
 (function furniture() {
   const blk = [], wht = [], bench = [];
+  const half = x => 5.51 * (1 - Math.abs(x) / 64.9), busy = x => Math.abs(x) < 15.6 || Math.abs(Math.abs(x) - 31) < 1.4 || Math.abs(Math.abs(x) - 53.5) < 1.3;
   for (const s of [-1, 1]) {
-    for (let k = 0; k < 18; k++) { const x = s * (17 + k * 2.4); if (Math.abs(Math.abs(x) - 31) < 1.6 || Math.abs(Math.abs(x) - 52) < 1.4) continue; const half = 5.5 * (1 - Math.abs(x) / 64.9); (k % 2 ? blk : wht).push([x, CZ + (k % 4 < 2 ? 1 : -1) * Math.min(1.6, half * 0.55)]); }
-    for (const x of [20, 25.5, 36, 40.5, 45, 56]) bench.push([s * x, CZ + (x % 2 ? 1.9 : -1.9) * (1 - x / 70)]);
+    let k = 0;
+    for (let x = 16.4; k < 20 && x < 63; x += 2.0) { if (busy(s * x)) continue; const hw = half(x);
+      [1, -1].forEach(side => (((k + (side > 0 ? 0 : 1)) % 2) ? blk : wht).push([s * x + side * 0.35, CZ + side * hw * 0.62]));
+      k++; }
+    [18.6, 24, 28.6, 35.4, 40, 45.4, 50.2, 58].forEach((x, i) => bench.push([s * x, CZ + (i % 2 ? 1 : -1) * half(x) * 0.25]));
   }
   instanced(blk, new THREE.BoxGeometry(0.45, 0.45, 0.45), M(0x14161f), 0.225);
   instanced(wht, new THREE.BoxGeometry(0.45, 0.45, 0.45), M(0xf2f4f8), 0.225);
   instanced(bench, new THREE.BoxGeometry(1.8, 0.45, 0.5), M(0x6b4a2e), 0.225);
 })();
+// 원형 트러스 ↔ B홀 입구 트러스 (휴게공간 투시도 3쪽 · Furniture Plan 12쪽의 남북 줄, 높이는 유나 판단)
+truss([0, 9.5, CZ + 7.2], [0, 9.5, -1.5], 0.45);
 // 8 트러스 배너 1,200 × 3,000 · 20개 · 6 m 간격 (가운데 줄)
 (function trussBanners() {
   const rects = Array.from({ length: 20 }, (_, k) => { const col = k % 10, row = k < 10 ? 0 : 1; const u0 = Math.max(0, (137 + (col - 1) * 143.5) / 1400), u1 = (137 + (col - 1) * 143.5 + 103) / 1400; return row ? [u0, 0.0, u1, 0.489] : [u0, 0.516, u1, 0.996]; });
@@ -1095,88 +1121,207 @@ panel(tex('tex/b_gate4.jpg'), 7, 6, LOBBY.x0 - 1.25, 9.5, 24.8, -Math.PI / 2);
 // 게이트 표지 (조감 바닥)
 [['GATE 1', LOBBY.x1 + 4, 24], ['GATE 2', LOBBY.x1 + 4, 13], ['GATE 4', LOBBY.x0 + 3, 13]].forEach(([t, x, z]) => { const s = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.6), B(textTex([t], { w: 512, h: 136, bg: '#e8192c', size: 90 }))); s.rotation.x = -Math.PI / 2; s.position.set(x, 0.05, z); s.rotation.z = Math.PI / 2 * (x > 0 ? 1 : -1); birdOnly.add(s); });
 
-/* ---------- 다목적홀 1·2 (어둡게) ---------- */
+/* ---------- 다목적홀 대기실 줄 (로비 ↔ 홀 사이, 10. 30.) ----------
+   근거: 사업팀/공간조성계획/대기실배정_1029/다목적홀1·2_대기실_도면_v3.png(10. 14. 실측) · 렌탈 배치(안) v3(10. 28.)
+   방 x 자리는 도면 픽셀 환산(x = −64 + (px − 275) × 0.078), 방 폭은 실측(출연자 6.8 · VIP-1 11 · 사무실1 3.8 + 2.8 · 사무실2 3.8). 높이·문 자리 = 유나 판단 */
+const RZ0 = 31.4, RZ1 = MH.z0, RH = 3.2;
+const ROOMS = [
+  { name: 'VIP 대기실-1', no: 1, x0: -72.5, x1: -61.5 },
+  { name: '출연자대기실-2', no: 2, x0: -57.9, x1: -51.1 },
+  { name: '주최자사무실 1', no: 3, x0: -42.8, x1: -36.2, split: -39.0 },
+  { name: '주최자사무실 2', no: 4, x0: -7.3, x1: -3.5 },
+  { name: 'VIP 대기실-2', no: 5, x0: 3.5, x1: 16.5, sub: '내빈 B 대기실' },
+];
+{
+  const wm = M(0xe3e0d8), rw = M(0xf2efe9), solid = [[LOBBY.x0, -72.5], [-61.5, -57.9], [-36.2, -7.3]];
+  solid.forEach(([a, b]) => boxXZ(a, b, 31.6, MH.z0, WALL_H, wm));
+  ROOMS.forEach(r => {
+    const dx = r.x0 + 1.6;                                                    // 로비 쪽 문 (1.2 m)
+    r.door = dx;
+    boxXZ(r.x0, dx - 0.6, 31, RZ0, WALL_H, wm); boxXZ(dx + 0.6, r.x1, 31, RZ0, WALL_H, wm); boxXZ(dx - 0.6, dx + 0.6, 31, RZ0, WALL_H - 2.3, wm, 2.3);
+    boxXZ(r.x0 - 0.15, r.x0, RZ0, RZ1, WALL_H, wm); boxXZ(r.x1, r.x1 + 0.15, RZ0, RZ1, WALL_H, wm);
+    if (r.split) boxXZ(r.split - 0.06, r.split + 0.06, RZ0, RZ1 - 1.4, RH, rw);
+    floorPlane(r.x0, r.x1, RZ0, RZ1, M(r.name.startsWith('VIP') ? 0x6b5a4a : 0x8c8f96, { roughness: .95 }), 0.02);
+    const pl = sign([r.no + '  ' + r.name].concat(r.sub ? [r.sub] : []), 2.6, r.sub ? 0.9 : 0.55, { bg: '#0b1440', size: 110 });
+    pl.position.set(dx + 1.9, 2.4, 30.97); pl.rotation.y = Math.PI; scene.add(pl);    // 로비에서 읽는 문패
+    const lb = sign([r.name], Math.min(8, (r.x1 - r.x0) * 0.8), 1.1, { bg: 'rgba(11,20,64,.8)', size: 120 });
+    lb.rotation.x = -Math.PI / 2; lb.position.set((r.x0 + r.x1) / 2, RH + 0.4, (RZ0 + RZ1) / 2); birdOnly.add(lb);  // 조감 이름
+  });
+  // 방 안 집기: 렌탈 v6 · v4 대기실 배정(테이블 W1500 · 거울 · 행거). VIP 방 가구는 기존 것 → 모양은 유나 판단
+  const white = M(0xf4f4f2, { roughness: .6 }), blackC = M(0x1b1c22), glass = M(0xcfe3f5, { roughness: .1, metalness: .6 }), steel = M(0x9aa0aa, { metalness: .7, roughness: .35 });
+  const table = (x, z, rot = 0) => { const t = box(1.5, 0.05, 0.6, white, x, z, 0.72); t.rotation.y = rot; [-0.68, 0.68].forEach(o => { const l = box(0.04, 0.72, 0.5, steel, x + (rot ? 0 : o), z + (rot ? o : 0), 0); l.rotation.y = rot; }); };
+  const chair = (x, z) => { box(0.42, 0.05, 0.42, blackC, x, z, 0.44); box(0.42, 0.45, 0.04, blackC, x, z + 0.2, 0.47); box(0.36, 0.44, 0.04, blackC, x, z, 0); };
+  const mirror = (x, z) => { box(0.5, 1.6, 0.04, glass, x, z, 0.2); box(0.56, 0.08, 0.3, steel, x, z, 0); };
+  const hanger = (x, z) => { [-0.6, 0.6].forEach(o => box(0.04, 1.7, 0.04, steel, x + o, z, 0)); box(1.26, 0.04, 0.04, steel, x, z, 1.7); for (let i = 0; i < 5; i++) box(0.05, 0.8, 0.45, M([0x2c3550, 0x6a2f3a, 0xd9d4c8][i % 3]), x - 0.45 + i * 0.22, z, 0.85); };
+  const set2 = (cx, cz, n) => { [-0.9, 0.9].forEach((o, k) => { table(cx + o, cz); for (let i = 0; i < n / 2; i++) chair(cx + o - 0.45 + (i % 2) * 0.9, cz + (i < 2 ? -0.6 : 0.6)); }); };
+  // 1 VIP 대기실-1: 방에 있는 테이블 · 의자 + 거울 1 · 행거 2
+  box(4.2, 0.06, 1.4, M(0x4a3a2c, { roughness: .5 }), -67.5, 34.6, 0.72); for (let i = 0; i < 4; i++) [-1, 1].forEach(s => chair(-69 + i * 1.0, 34.6 + s * 1.0));
+  mirror(-62.2, 36.9); hanger(-71, 36.9); hanger(-71, 32.2);
+  // 2 출연자대기실-2: 테이블 2 · 의자 8 · 거울 1 · 행거 1
+  set2(-54.5, 34.6, 8); mirror(-52, 37.1); hanger(-56.6, 37.1);
+  // 3 주최자사무실 1: 테이블 2 · 의자 8 · 거울 1 · 행거 1 (두 칸)
+  table(-41, 33.5); table(-41, 35.8); [-41.5, -40.5].forEach(x => { chair(x, 32.9); chair(x, 36.4); }); chair(-42.2, 34.6); chair(-39.8, 34.6); chair(-42.2, 35.8); chair(-39.8, 35.8);
+  mirror(-37.2, 37.1); hanger(-37.6, 32.4);
+  // 4 주최자사무실 2: 4단 선반 1 · 테이블 2 · 의자 6
+  box(1.2, 1.8, 0.45, steel, -6.6, 36.9, 0); for (let i = 1; i < 4; i++) box(1.2, 0.03, 0.45, steel, -6.6, 36.9, i * 0.45);
+  table(-5.4, 33.4, Math.PI / 2); table(-5.4, 35.2, Math.PI / 2); [33.0, 33.8, 34.8, 35.6].forEach(z => chair(-6.3, z)); chair(-4.5, 33.4); chair(-4.5, 35.2);
+  // 5 VIP 대기실-2 (내빈 B): 스탠딩 TV 1(렌탈 KP-05) + 소파 · 낮은 탁자(기존 것, 모양 유나 판단)
+  const sofa = M(0xe8e1d4, { roughness: .9 });
+  [[6.5, 1], [13.5, -1]].forEach(([x, s]) => { box(1, 0.45, 3, sofa, x, 34.5, 0); box(0.25, 0.4, 3, sofa, x - s * 0.4, 34.5, 0.45); });
+  box(4.5, 0.4, 1, sofa, 10, 36.6, 0); box(2.4, 0.4, 1.2, M(0x3a2c22), 10, 34.5, 0);
+  { const tv = new THREE.Group(); tv.position.set(10, 0, 32.1); scene.add(tv); box(0.5, 1.2, 0.05, steel, 0, 0, 0, tv); box(1.45, 0.84, 0.06, blackC, 0, 0, 1.2, tv);
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.38, 0.78), new THREE.MeshBasicMaterial({ map: ledTex('2026 CO-SHOW', '포토존 진행 화면', { w: 512, h: 288 }), toneMapped: false })); scr.position.set(0, 1.62, 0.035); tv.add(scr); }
+}
+
+/* ---------- 다목적홀1 · 공식행사장 (10. 30. 다시 지음) ----------
+   근거: 이충응 팀장 「2026 CO-SHOW stage-1023.pdf」(첨부/2026-10-28/163252_…) 1쪽 평면 · 2쪽 A 입면, 렌탈 배치(안) v3(10. 28.) · 간선도면(10. 29.)
+   평면 환산 x = −64 + (px − 528) × 0.045, z = 37.6 + (py − 233) × 0.045 (홀 41,460 × 37,300 = 921 × 829 px). 탑 한 칸 2,070, 탑 높이 = 칸 안 글자(2 · 4 · 6 · 8 m) */
 ZONE = 0.03;
-const beige = M(0xd9ccb2), wood = M(0xc9a26e, { roughness: .6 });
+const beige = M(0xd9ccb2);
 floorPlane(MH.x0, MH.x1, MH.z0, MH.z1, beige, 0.005);
 floorPlane(-51, -43, 31, MH.z0, M(0xe6e9ef), 0.006); floorPlane(-3, 3, 31, MH.z0, M(0xe6e9ef), 0.006);
-[[LOBBY.x0, -51], [-43, -3], [3, MH.x1 + 4]].forEach(([a, b]) => boxXZ(a, b, 31.6, MH.z0, WALL_H, M(0xe3e0d8)));
+const wood = M(0xc9a26e, { roughness: .6 });
 const wallMH = (x0, x1, z0, z1) => { boxXZ(x0, x1, z0, z1, WALL_H, wood); boxXZ(x0, x1, z0, z1, 11 - WALL_H, M(0xe9dfcc), WALL_H, walkOnly); };
 [[MH.x0, -51], [-43, -3], [3, MH.x1]].forEach(([a, b]) => wallMH(a, b, MH.z0, MH.z0 + .5));
 wallMH(MH.x0, MH.x1, MH.z1 - .5, MH.z1); wallMH(MH.x0 - .5, MH.x0, MH.z0, MH.z1); wallMH(MH.x1, MH.x1 + .5, MH.z0, MH.z1);
 floorPlane(MH.x0, MH.x1, MH.z0, MH.z1, M(0x2a3045, { side: THREE.DoubleSide }), 11, walkOnly);
-boxXZ(MH.mid - .2, MH.mid, MH.z0, 52, 6, M(0xf1eee8)); boxXZ(MH.mid - .2, MH.mid, 58, MH.z1, 6, M(0xf1eee8));
-(function stage() {                                                            // 개막식 무대 (첨부 사진 분위기)
-  const sx0 = MH.x0 + 0.5, sx1 = MH.x0 + 8.5, sz0 = 43, sz1 = 71, cz = (sz0 + sz1) / 2, black = M(0x0b0c12, { roughness: .3 });
-  boxXZ(sx0, sx1, sz0, sz1, 1.2, black);
-  for (let i = 0; i < 3; i++) boxXZ(sx1 + i * 0.6, sx1 + (i + 1) * 0.6, cz - 4, cz + 4, 1.2 - (i + 1) * 0.35, black);
-  boxXZ(sx1 - 0.05, sx1, sz0, sz1, 0.05, E(0x5a6bff, 2.2), 1.15);              // 무대 앞 끝 빛줄
-  boxXZ(MH.x0 + 0.05, MH.x0 + 0.4, sz0 - 4, sz1 + 4, 10.5, M(0x05060a));         // 검정 배경막
-  // 가운데 물결 LED 16 × 5.5 m + 양옆 픽셀 LED 탑
-  box(16.4, 5.9, 0.3, M(0x05060a), MH.x0 + 0.75, cz, 1.6).rotation.y = Math.PI / 2;
-  const wv = new THREE.Mesh(new THREE.PlaneGeometry(16, 5.5), GLOW(waveTex, 1.6)); wv.position.set(MH.x0 + 0.92, 4.55, cz); wv.rotation.y = Math.PI / 2; scene.add(wv);
-  [-1, 1].forEach(s => pixBlock(MH.x0 + 0.6, MH.x0 + 3, cz + s * 10.2 - 1.5, cz + s * 10.2 + 1.5, 8.5));
-  // 트러스: 탑 4개 + 위 보
-  const xa = MH.x0 + 1.8, xb = MH.x0 + 13, zs = [cz - 13.5, cz + 13.5], H = 10.5;
-  [xa, xb].forEach(x => zs.forEach(z => truss([x, 0, z], [x, H, z], 0.5)));
-  [xa, MH.x0 + 7.5, xb].forEach(x => truss([x, H, zs[0]], [x, H, zs[1]]));
-  zs.forEach(z => truss([xa, H, z], [xb, H, z]));
-  // 무빙라이트 2줄 × 9개: 빛줄기를 무대 가운데로 모음
+boxXZ(MH.mid - .25, MH.mid + .25, MH.z0 + .5, MH.z1 - .5, 11, M(0xf1eee8));            // 다목적홀1 | 2 사이 이동벽 (닫힘, 실측 도면 점선)
+// 레이어 타워 (2,070 각, 격자 트러스 그림)
+const towerMat = (() => { const C = {}; return h => { if (C[h]) return C[h];
+  const t = canvasTex(256, 256, (g, w) => { g.clearRect(0, 0, w, w); g.strokeStyle = '#c9cfd9'; g.lineWidth = 10; g.strokeRect(5, 5, w - 10, w - 10); g.lineWidth = 5; g.beginPath(); g.moveTo(8, 8); g.lineTo(w - 8, w - 8); g.moveTo(w - 8, 8); g.lineTo(8, w - 8); g.stroke(); g.beginPath(); g.moveTo(0, w / 2); g.lineTo(w, w / 2); g.stroke(); });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, h / 2.07);
+  return (C[h] = M(0xffffff, { map: t, alphaTest: 0.35, side: THREE.DoubleSide, metalness: .8, roughness: .3, emissive: 0x161b28 })); }; })();
+const TOWERS = [];
+const towerRun = (x, z, dx, dz, hs) => hs.forEach((h, i) => { const cx = x + dx * 2.07 * (i + 0.5), cz = z + dz * 2.07 * (i + 0.5); box(2.07, h, 2.07, towerMat(h), cx, cz, 0); TOWERS.push([cx, cz, h]); });
+towerRun(-63.1, 47.0, 0, 1, [6, 6, 6, 6, 6, 6, 6, 6, 6]);       // 무대 뒤 9개 (A 입면 6 m)
+towerRun(-61.1, 45.0, 1, 0, [6, 6, 6, 8, 6]);                   // 북쪽 줄 (무대 쪽)
+towerRun(-61.1, 65.4, 1, 0, [6, 6, 6, 8, 6]);                   // 남쪽 줄 (무대 쪽)
+towerRun(-44.2, 45.1, 1, 0, [4, 4, 4, 4, 2, 2]);                // 북쪽 줄 (입구 통로 동쪽 G)
+towerRun(-45.6, 65.4, 1, 0, [6, 6, 8, 4, 8, 6, 8]);             // 남쪽 줄 (객석 쪽)
+towerRun(-24.85, 46.9, 0, 1, [4, 8, 6, 8, 8, 8, 6, 8, 4]);      // 콘솔 뒤 동쪽 줄 (D)
+// 입구 통로 양쪽 벽 (평면 분홍 칸, 3,140 폭) — 높이 3 m = 유나 판단
+const scrim = M(0x07080d, { roughness: .9 });
+boxXZ(-50.1, -49.0, 38.1, 47.0, 3, scrim); boxXZ(-45.7, -44.6, 38.1, 45.0, 3, scrim);
+(function stageA() {
+  const black = M(0x0b0c12, { roughness: .3 }), sx0 = -61.0, sx1 = -55.4, sz0 = 47.2, sz1 = 65.4, cz = (sz0 + sz1) / 2;
+  boxXZ(sx0, sx1, sz0, sz1, 0.9, black);                                             // 기존무대 H 900 · 18,280 × 5,630
+  boxXZ(sx1 - 0.05, sx1, sz0, sz1, 0.05, E(0x5a6bff, 2.2), 0.85);                    // 무대 앞 끝 빛줄
+  [[sz0 + 1.2], [sz1 - 1.2]].forEach(([z]) => { for (let i = 0; i < 3; i++) boxXZ(sx1 + i * 0.35, sx1 + (i + 1) * 0.35, z - 0.7, z + 0.7, 0.9 - (i + 1) * 0.3, black); });  // 계단 (자리 유나 판단)
+  // A 입면: 뒤 막(분홍) 18 × 5 m 위에 LED-C 12,000 × 4,000 (무대 위 1,000부터)
+  boxXZ(sx0 - 0.25, sx0 - 0.05, sz0, sz1, 5, M(0x05060a), 0.9);
+  const wv = new THREE.Mesh(new THREE.PlaneGeometry(12, 4), GLOW(waveTex, 1.6)); wv.position.set(sx0 + 0.02, 0.9 + 1 + 2, cz); wv.rotation.y = Math.PI / 2; scene.add(wv);
+  // 강연대 (렌탈 ② 메인 · ③ 사회대, 아크릴)
+  const acr = M(0xdfeaff, { transparent: true, opacity: .55, roughness: .1 });
+  [[52.5], [61.9]].forEach(([z]) => box(0.6, 1.15, 0.5, acr, -56.2, z, 0.9));
+  // ⑤ 20일 시상 테이블 2 (무대 남쪽)
+  [-58.6, -57.0].forEach(x => box(1.5, 0.05, 0.6, M(0xf4f4f2), x, 64.4, 0.9 + 0.72));
+  // 무빙라이트: 무대 뒤 탑 · 동쪽 탑 위 (빛줄기는 무대 가운데로)
   const cols = [0xe8eeff, 0xa070ff, 0x5fd8ff];
-  [[MH.x0 + 7.5, 1.4], [xb, 0.9]].forEach(([x, spread], row) => {
-    for (let k = 0; k < 9; k++) {
-      const z = cz - 12 + k * 3, g = new THREE.Group(); g.position.set(x, H - 0.45, z); scene.add(g);
-      box(0.32, 0.4, 0.32, M(0x15161c, { roughness: .4 }), 0, 0, -0.2, g);
-      const lens = new THREE.Mesh(new THREE.CircleGeometry(0.13, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(cols[k % 3]).multiplyScalar(3), toneMapped: false })); lens.rotation.x = Math.PI / 2; lens.position.y = -0.22; g.add(lens);
-      const tx = sx1 - 2 - row * 1.5, tz = cz + (z - cz) * (0.15 + row * 0.25);
-      beam([0, -0.2, 0], [tx - x, 1.2 - (H - 0.45), tz - z], spread, cols[k % 3], row ? 0.16 : 0.2, g);
-      HEADS.push({ g, ph: k * 0.7 + row * 2 });
-    }
+  TOWERS.filter(([x, , h]) => x < -61 || x > -25.5).forEach(([x, z, h], k) => {
+    if (LOW && k % 2) return;
+    const g = new THREE.Group(); g.position.set(x, h + 0.35, z); scene.add(g);
+    box(0.32, 0.4, 0.32, M(0x15161c, { roughness: .4 }), 0, 0, -0.2, g);
+    const tx = x < -61 ? -50 : -57.5, tz = cz + (z - cz) * 0.4;
+    beam([0, -0.2, 0], [tx - x, 1 - (h + 0.35), tz - z], x < -61 ? 1.1 : 0.9, cols[k % 3], 0.16, g);
+    HEADS.push({ g, ph: k * 0.7 });
   });
-  // 진짜 조명: 무대 2개 + 객석 보라 빛 1개
-  [[xb, cz - 6], [xb, cz + 6]].forEach(([x, z], i) => { if (LOW && i) return; const L = new THREE.SpotLight(0xeef2ff, 300, 45, 0.42, 0.6, 2); L.position.set(x, H - 0.6, z); L.target.position.set(sx0 + 4, 1.2, cz); scene.add(L, L.target); });
-  { const L = new THREE.SpotLight(0x8a63ff, 380, 40, 0.95, 0.8, 2); L.position.set(-41, 10.5, cz); L.target.position.set(-44, 0, cz); scene.add(L, L.target); }
-  pool(sx0 + 4.5, cz, 6, 0xb9a8ff, 0.35, 1.22);
-  // 무대 위 사람 2명 (크기 비교용)
+  [[-24.85, cz - 6], [-24.85, cz + 6]].forEach(([x, z], i) => { if (LOW && i) return; const L = new THREE.SpotLight(0xeef2ff, 320, 50, 0.4, 0.6, 2); L.position.set(x, 8.5, z); L.target.position.set(sx0 + 3, 1.2, cz); scene.add(L, L.target); });
+  { const L = new THREE.SpotLight(0x8a63ff, 380, 40, 0.95, 0.8, 2); L.position.set(-42, 10.5, cz); L.target.position.set(-42, 0, cz); scene.add(L, L.target); }
+  pool(sx0 + 3, cz, 6, 0xb9a8ff, 0.35, 0.92);
   const wm = M(0xf2f4f8, { roughness: .5 });
-  [-1.3, 1.3].forEach(o => { const p = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 1.25, 4, 10), wm); p.position.set(sx1 - 2.2, 1.2 + 0.85, cz + o); scene.add(p); const hd = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 10), wm); hd.position.set(sx1 - 2.2, 1.2 + 1.7, cz + o); scene.add(hd); });
+  [-1.3, 1.3].forEach(o => figure(scene, sx1 - 1.6, cz + o, wm));
+  scene.children.slice(-4).forEach(c => c.position.y += 0.9);
 })();
-(function seats() {                                                            // 객석 (가운데 통로 2.6 m)
+// 무대 둘레 LED (렌탈 배치 v3 · 간선도면): 2,000 × 3,000 넷 · 5,000 × 1,000 하나 · 콘솔 뒤 5,000 × 3,000
+[[-51.7, 47.25, 0, 2, 3], [-40.0, 47.25, 0, 2, 3], [-52.5, 65.3, Math.PI, 2, 3], [-42.1, 65.3, Math.PI, 2, 3], [-34.8, 65.3, Math.PI, 5, 1], [-25.95, 56.4, -Math.PI / 2, 5, 3]].forEach(([x, z, ry, w, h]) => {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), pixMat(w / 2, h / 2, 1.5)); m.position.set(x, 2.4 + h / 2, z); m.rotation.y = ry; scene.add(m);
+  box(w + 0.2, h + 0.2, 0.12, M(0x0a0d18), x - Math.sin(ry) * 0.08, z - Math.cos(ry) * 0.08, 2.3).rotation.y = ry;
+});
+(function seats() {                                                            // ① 객석 접이식 의자(검정) 350 · 가운데 통로 2 m
   const list = [];
-  for (let x = -52; x <= -36; x += 1.0) for (let z = 43.5; z <= 70.5; z += 0.6) { if (Math.abs(z - 57) < 1.3 || Math.abs(z - 49) < 0.35 || Math.abs(z - 65) < 0.35) continue; list.push([x, z]); }
-  const seat = new THREE.BoxGeometry(0.48, 0.12, 0.5).translate(0, 0.44, 0), back = new THREE.BoxGeometry(0.1, 0.62, 0.5).translate(0.22, 0.78, 0), base = new THREE.BoxGeometry(0.3, 0.38, 0.36).translate(0, 0.19, 0);
-  const im = new THREE.InstancedMesh(mergeGeometries([seat, back, base]), M(0xffffff, { roughness: .7 }), list.length), o = new THREE.Object3D(), c = new THREE.Color();
-  list.forEach(([x, z], i) => { o.position.set(x, 0, z); o.updateMatrix(); im.setMatrixAt(i, o.matrix); im.setColorAt(i, c.set(z > 57 ? (Math.random() > .5 ? 0x3a2c66 : 0x2e2756) : (Math.random() > .5 ? 0x1c2142 : 0x232a52))); });
+  for (let i = 0; i < 16; i++) for (let j = 0; j < 22; j++) { const x = -51.1 + i * 1.29, z = j < 11 ? 48.9 + j * 0.65 : 57.9 + (j - 11) * 0.65; if (i === 15 && (j === 0 || j === 21)) continue; list.push([x, z]); }
+  const seat = new THREE.BoxGeometry(0.44, 0.04, 0.44).translate(0, 0.45, 0), back = new THREE.BoxGeometry(0.04, 0.4, 0.42).translate(0.22, 0.72, 0), legs = new THREE.BoxGeometry(0.4, 0.45, 0.03).translate(0, 0.22, 0);
+  const im = new THREE.InstancedMesh(mergeGeometries([seat, back, legs]), M(0x1a1b20, { roughness: .6 }), list.length), o = new THREE.Object3D();
+  list.forEach(([x, z], i) => { o.position.set(x, 0, z); o.updateMatrix(); im.setMatrixAt(i, o.matrix); });
   scene.add(im);
-  floorPlane(-55, -34.8, 55.7, 58.3, M(0x3b1a16, { roughness: .9 }), 0.02);       // 통로 카펫
 })();
-// 양옆 벽 픽셀 LED
-pixWall(-56, MH.z0 + 0.55, -51.3, MH.z0 + 0.55, 5.5); pixWall(-42.7, MH.z0 + 0.55, -35, MH.z0 + 0.55, 5.5);   // 입구(−51 ~ −43)는 비움 pixWall(-56, MH.z1 - 0.55, -35, MH.z1 - 0.55, 5.5);
-for (let i = 0; i < 6; i++) { const x = -31 + (i % 2) * 5, z = 45 + Math.floor(i / 2) * 9; box(2.6, 0.78, 1.4, M(0x1d3aa8), x, z, 0); [-1, 1].forEach(o => box(.5, .8, .5, M(0x15182a), x, z + o * 1.2, 0)); }
-pixBlock(-34.9, -34.1, 42, 72, 2.6);
-ledPanel(14, 3, ledTex('2026 CO-SHOW', '선수단 · 관람객 라운지', { w: 1536, h: 330 }), -34.0, 1.7, 57, Math.PI / 2);
-(function hallArch() { const g = new THREE.Group(); g.position.set(-47, 0, 40.5); scene.add(g); const blk = M(0x0b0d18, { roughness: .4 });
-  box(1.2, 5.5, 1.2, blk, -3.6, 0, 0, g); box(1.2, 5.5, 1.2, blk, 3.6, 0, 0, g); box(8.4, 1.6, 1.2, blk, 0, 0, 5.5, g);
-  const s = sign(['CO-SHOW'], 5, 1.1, { bg: '#0b0d18', fg: '#2fe4ff', size: 150 }); s.position.set(0, 6.3, -0.61); s.rotation.y = Math.PI; g.add(s); })();
-ZONE = 0.05;
+{ // ④ 19일 심사석 테이블 3 · 의자 5 (무대 앞)
+  const w = M(0xf4f4f2);
+  [54.4, 56.6, 58.8].forEach(z => box(0.6, 0.05, 1.5, w, -53.6, z, 0.72));
+  for (let i = 0; i < 5; i++) box(0.42, 0.45, 0.42, M(0x1a1b20), -52.9, 54.0 + i * 1.2, 0);
+}
+{ // ⑥ 콘솔 (D): 단 위 운영 · 조명 · 특효 · 음향 · 영상 · VJ 데스크 + 앞 테이블 7 · 의자 14 · 복합기 · 노트북 2
+  const k = M(0x22252e, { roughness: .5 });
+  boxXZ(-26.8, -25.0, 48.3, 62.7, 0.4, M(0x3a2c28));
+  for (let i = 0; i < 8; i++) { const z = 49.2 + i * 1.75; box(0.9, 0.85, 1.4, k, -25.9, z, 0.4); box(0.5, 0.35, 0.05, E(0x3b7cff, 1.2), -26.3, z, 1.3).rotation.y = Math.PI / 2; }
+  for (let i = 0; i < 7; i++) { const z = 58.7 + i * 0.95; box(1.5, 0.05, 0.6, M(0xf4f4f2), -29.6, z, 0.72); [-0.22, 0.22].forEach(o => box(0.4, 0.45, 0.4, M(0x1a1b20), -28.5, z + o, 0)); }   // 렌탈 배치 v3 ⑥ 자리
+  [55.0, 55.8].forEach(z => box(0.35, 0.02, 0.25, M(0x2a2d35), -29.6, z, 0.77));   // 노트북 2
+  box(0.6, 1.05, 0.6, M(0xe9ebee), -28.4, 51.0, 0);
+}
+{ // ⑦ 하역장 쪽: 테이블 4 · 의자 12 · 접이식 가림막 2
+  const w = M(0xf4f4f2);
+  [[-61.2, 71.4], [-58.0, 71.4], [-61.2, 73.8], [-58.0, 73.8]].forEach(([x, z]) => { box(1.5, 0.05, 0.6, w, x, z, 0.72); [-0.45, 0, 0.45].forEach(o => box(0.42, 0.45, 0.42, M(0x1a1b20), x + o, z - 0.6, 0)); });
+  [71.5, 73.5].forEach(z => box(0.05, 1.8, 1.9, M(0x2b2f3a), -55.1, z, 0));
+}
+// 메달 비행 공기조형물(코아이) 대기 자리 — 렌탈 배치 v3 오른쪽 아래 (3 × 3.2 m)
+coaiCard('stand', -26.5, 71.2, 0, 3.2);
+ZONE = 0.3;
+
+/* ---------- 다목적홀2 · 세미나장 (경진대회 3구역, 10. 30. 다목적홀2 컨소시엄 배치도로 다시 맞춤) ----------
+   근거: 「2026 CO-SHOW 다목적홀 전기, 인터넷 배치」(첨부/2026-10-29/191912) 5쪽 배치도 · 6 · 7 · 8쪽
+   이차전지 12 × 16 m(북서) · 미래자동차 B AUTO HACK 12 × 12 m(남서) · 미래자동차 A AUTO RACE 14 × 24 m(동) · 통로 5 m
+   방 안 가구는 10. 21. 3D 그림(E = 긴 테이블 세미나 → 이차전지, F = 네모 테이블 → 미래차 B, D = 레이싱 트랙 → 미래차 A)을 옮긴 유나 판단. 가벽 4 m */
 (function hall2() {
-  const pm = M(0xf4f2ee);
-  const room = (x0, x1, z0, z1) => { boxXZ(x0, x1, z0, z0 + .2, 3, pm); boxXZ(x0, x1, z1 - .2, z1, 3, pm); boxXZ(x0, x0 + .2, z0, z1, 3, pm); boxXZ(x1 - .2, x1, z0, (z0 + z1) / 2 - 1.5, 3, pm); boxXZ(x1 - .2, x1, (z0 + z1) / 2 + 1.5, z1, 3, pm); };
-  room(-19.5, -6, 40, 55.5); room(-19.5, -6, 58, 74);
-  for (let z = 42; z < 54; z += 2.2) for (const x of [-16.5, -11]) box(4, 0.75, 0.6, M(0xffffff), x, z, 0);
-  for (let z = 60; z < 72; z += 3) for (const x of [-17, -13, -9]) box(1.6, 0.75, 1.6, M(0xffffff), x, z, 0);
-  box(3.5, 0.5, 2, M(0x2b2f3a), -12.5, 72, 0);
-  boxXZ(-3, -2.8, 40, 52, 3, pm); boxXZ(-3, -2.8, 56, 74, 3, pm); boxXZ(11.8, 12, 40, 74, 3, pm); boxXZ(-3, 12, 40, 40.2, 3, pm); boxXZ(-3, 12, 73.8, 74, 3, pm);
-  const track = canvasTex(512, 384, (g) => { g.fillStyle = '#4c8a3a'; g.fillRect(0, 0, 512, 384); g.strokeStyle = '#2b2d33'; g.lineWidth = 46; g.lineJoin = 'round'; g.beginPath(); g.moveTo(80, 80); g.lineTo(430, 80); g.quadraticCurveTo(470, 80, 470, 130); g.lineTo(470, 300); g.quadraticCurveTo(470, 330, 430, 330); g.lineTo(300, 330); g.lineTo(260, 200); g.lineTo(200, 330); g.lineTo(80, 330); g.quadraticCurveTo(40, 330, 40, 290); g.lineTo(40, 120); g.quadraticCurveTo(40, 80, 80, 80); g.stroke(); g.setLineDash([14, 14]); g.strokeStyle = '#fff'; g.lineWidth = 4; g.stroke(); });
-  floorPlane(-1.5, 10.5, 42, 51, M(0xffffff, { map: track }), 0.03);
-  for (let x = -0.5; x < 11; x += 2.6) for (let z = 54; z < 72; z += 3) box(1.6, 0.75, 1.6, M(0xffffff), x + 0.8, z, 0);
-  const hs = sign(['경진대회 D · E · F Hall'], 10, 1.4, { bg: '#0b1440', border: '#2fe4ff', size: 130 }); hs.position.set(-4.5, 5.4, MH.z0 + 0.8); scene.add(hs);
+  const pm = (() => { const t = canvasTex(256, 256, (g, w) => { g.fillStyle = '#f3f1ec'; g.fillRect(0, 0, w, w); g.fillStyle = '#c9ccd2'; g.fillRect(0, 0, 6, w); g.fillRect(0, w / 2 - 3, w, 6); }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })();
+  const PM = {}; const panelM = len => { const k = Math.round(len); if (PM[k]) return PM[k]; const t = pm.clone(); t.repeat.set(Math.max(1, k), 2); t.needsUpdate = true; return (PM[k] = M(0xffffff, { map: t, roughness: .8 })); };
+  const H = 4, X0 = MH.mid + .25;
+  floorPlane(X0, MH.x1, MH.z0 + .5, MH.z1 - .5, M(0xd6cdb8, { roughness: .95 }), 0.007);   // 카펫 (3D 그림 베이지)
+  floorPlane(-8.75, -3.75, MH.z0 + .5, MH.z1 - .5, M(0xbfc3cb, { roughness: .9 }), 0.009);   // 가운데 통로 5 m (배치도 회색)
+  const wall = (x0, x1, z0, z1) => { const len = Math.max(x1 - x0, z1 - z0); boxXZ(x0, x1, z0, z1, H, panelM(len)); };
+  // 이차전지 (북서): x X0 ~ −8.75 · z 37.6 ~ 53.6, 문 = 동쪽 벽 북쪽 끝
+  wall(X0, -8.75, 53.5, 53.7); wall(-8.85, -8.65, 41.8, 53.7);
+  // 미래자동차 B · AUTO HACK (남서): z 58.6 ~ 70.6, 문 = 동쪽 벽 북쪽 끝
+  wall(X0, -8.75, 58.5, 58.7); wall(-8.85, -8.65, 61.6, 70.7); wall(X0, -8.75, 70.5, 70.7);
+  // 미래자동차 A · AUTO RACE (동): x −3.75 ~ 10.25 · z 43.6 ~ 67.6, 문 = 북쪽 벽 서쪽
+  wall(-3.85, -2.75, 43.5, 43.7); wall(0.25, 10.35, 43.5, 43.7); wall(-3.85, -3.65, 43.5, 67.7); wall(10.15, 10.35, 43.5, 67.7); wall(-3.85, 10.35, 67.5, 67.7);
+  const ban = (t, x, z, ry) => { const s = sign(t, 4.6, 2.2, { bg: '#0b1440', border: '#2fe4ff', size: 120 }); s.position.set(x, H + 1.1, z); s.rotation.y = ry; scene.add(s); const b = box(4.7, 2.3, 0.1, M(0x0a0d18), x - Math.sin(ry) * 0.06, z - Math.cos(ry) * 0.06, H - 0.05); b.rotation.y = ry; };
+  ban(['2026 CO-SHOW', '이차전지'], -8.55, 47.7, Math.PI / 2);
+  ban(['미래자동차 B', 'AUTO HACK'], -8.55, 66.1, Math.PI / 2);
+  ban(['미래자동차 A', 'AUTO RACE'], 5.3, 43.4, Math.PI);
+  const w = M(0xffffff, { roughness: .6 }), blk = M(0x1a1b20), steel = M(0x9aa0aa, { metalness: .7, roughness: .35 }), red = M(0xd0262c);
+  const chairs = (list, ry = 0) => { const geo = mergeGeometries([new THREE.BoxGeometry(0.42, 0.04, 0.42).translate(0, 0.45, 0), new THREE.BoxGeometry(0.42, 0.4, 0.04).translate(0, 0.72, 0.2), new THREE.BoxGeometry(0.4, 0.45, 0.03).translate(0, 0.22, 0)]);
+    const im = new THREE.InstancedMesh(geo, blk, list.length), o = new THREE.Object3D(); list.forEach(([x, z, r], i) => { o.position.set(x, 0, z); o.rotation.y = r ?? ry; o.updateMatrix(); im.setMatrixAt(i, o.matrix); }); scene.add(im); };
+  const board = (x, z, ry) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); box(1.8, 1.1, 0.04, w, 0, 0, 0.9, g); [-0.85, 0.85].forEach(o => box(0.04, 1.9, 0.5, steel, o, 0, 0, g)); };
+  const sq = (x, z, list) => { box(1.6, 0.05, 1.6, w, x, z, 0.72); [[0, -1.05, Math.PI], [0, 1.05, 0], [-1.05, 0, -Math.PI / 2], [1.05, 0, Math.PI / 2]].forEach(([dx, dz, r]) => list.push([x + dx, z + dz, r])); };
+  const panelBox = (x, z) => box(0.5, 0.6, 0.35, red, x, z, 0);   // 전기 분전함 자리 (6 · 7 · 8쪽 빨간 네모)
+  // 이차전지: 서쪽 단 + 화이트보드, 긴 테이블 5줄 × 3 (앞 보기 = 서쪽)
+  boxXZ(X0 + .2, X0 + 2.2, 42.5, 48.7, 0.3, M(0x2b2d33)); board(X0 + 1, 45.6, Math.PI / 2);
+  const eC = [];
+  for (let r = 0; r < 5; r++) { const x = -16.6 + r * 1.65; [39.2, 43.4, 47.6].forEach(z0 => { box(0.6, 0.05, 3.4, w, x, z0 + 1.7, 0.72); for (let k = 0; k < 4; k++) eC.push([x + 0.55, z0 + 0.45 + k * 0.85, Math.PI / 2]); }); }
+  chairs(eC); panelBox(X0 + .4, 38.4);                                                        // 18 kW
+  // 미래자동차 B · AUTO HACK: 네모 테이블 3 × 2 · 남쪽 벽 책상 3 (8쪽 선) · 문 옆 긴 카운터 (8쪽 안쪽 칸)
+  const fC = [];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) sq(-18.3 + i * 3.4, 63 + j * 3.6, fC);
+  [-19, -16.4, -13.8].forEach(x => { box(1.7, 0.05, 0.6, w, x, 70.05, 0.72); fC.push([x, 69.4, Math.PI]); });
+  boxXZ(-9.75, -9.0, 61.6, 68.5, 0.9, M(0xe9ecf1)); chairs(fC); board(X0 + .4, 66.2, Math.PI / 2); panelBox(X0 + .4, 64.6);   // 15 kW (북쪽 벽에서 6 m)
+  // 미래자동차 A · AUTO RACE: 레이싱 트랙 매트 (3D 그림 D Hall) + 운영 테이블
+  const track = canvasTex(384, 640, (g) => { g.fillStyle = '#4c8a3a'; g.fillRect(0, 0, 384, 640); g.strokeStyle = '#c8363a'; g.lineWidth = 60; g.lineJoin = 'round'; const path = () => { g.beginPath(); g.moveTo(80, 80); g.lineTo(290, 80); g.quadraticCurveTo(320, 80, 315, 140); g.lineTo(220, 260); g.quadraticCurveTo(190, 300, 250, 340); g.lineTo(310, 420); g.quadraticCurveTo(330, 560, 290, 560); g.lineTo(90, 560); g.quadraticCurveTo(60, 560, 60, 500); g.lineTo(60, 120); g.quadraticCurveTo(60, 80, 80, 80); }; path(); g.stroke(); g.strokeStyle = '#2b2d33'; g.lineWidth = 46; path(); g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 3; g.setLineDash([14, 12]); path(); g.stroke(); g.setLineDash([]); g.fillStyle = '#fff'; for (let i = 0; i < 6; i++) g.fillRect(110 + i * 10, 58 + (i % 2) * 10, 10, 10); });
+  floorPlane(-2.6, 9.1, 46.2, 66.3, M(0xffffff, { map: track }), 0.03);
+  [0.6, 3.2].forEach(x => box(1.8, 0.05, 0.75, w, x, 44.6, 0.72)); chairs([[0.6, 45.2, 0], [3.2, 45.2, 0]]);
+  panelBox(-3.3, 51.6); panelBox(9.8, 59.6);                                                   // 10 kW × 2 (벽 따라 8 m)
+  // 통로 사람
+  const fm = M(0xd9dde6, { roughness: .5 }); [[-6.2, 47], [-6.6, 57.5], [1.8, 40.6]].forEach(([x, z]) => figure(scene, x, z, fm));
+  { const L = new THREE.PointLight(0xfff4e0, 90, 30, 2); L.position.set(-6.2, 9, 56); scene.add(L); }
+  [[-14.75, 45.6], [-14.75, 64.6], [3.25, 55.6]].forEach(([x, z]) => { const L = new THREE.PointLight(0xfff4e0, 110, 24, 2); L.position.set(x, 8, z); scene.add(L); });
+  const hs = sign(['다목적홀2 · 세미나장', '이차전지 · 미래자동차 A · B'], 8, 1.8, { bg: '#0b1440', border: '#2fe4ff', size: 110 }); hs.position.set(2, 6.2, MH.z0 + 0.6); scene.add(hs);
 })();
+// 로비 쪽 문 위 이름판 (홀 두 곳)
+[['다목적홀1 · 공식행사장', -47], ['다목적홀2 · 세미나장', 0]].forEach(([t, x]) => { const s = sign([t], 7, 1, { bg: '#0b1440', border: '#2fe4ff', size: 110 }); s.position.set(x, 3.9, 30.9); s.rotation.y = Math.PI; scene.add(s); });
 
 ZONE = 1;
 buildTruss();
 /* 구역 이름 (조감 바닥) */
-[['전시장 A · B · C홀', 0, -47, 40], ['로비 (콘코스)', 10, 28.5, 30], ['다목적홀1', -43, 74, 22], ['다목적홀2', -4, 74, 22]].forEach(([t, x, z, w]) => {
+[['전시장 A · B · C홀', 0, -47, 40], ['로비 (콘코스)', 10, 28.5, 30], ['다목적홀1 · 공식행사장', -42.5, 73.5, 26], ['다목적홀2 · 세미나장', -4, 73.5, 24]].forEach(([t, x, z, w]) => {
   const p = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 6), B(textTex([t], { w: 1024, h: 170, bg: 'rgba(11,20,64,.72)', size: 110 }))); p.rotation.x = -Math.PI / 2; p.position.set(x, 0.12, z); if (z === -47) { p.rotation.x = -0.5; p.position.set(0, 13, -62); }   // 전시장 글자는 부스 위가 아니라 뒷벽 위에 세움
   birdOnly.add(p);
 });
@@ -1195,9 +1340,9 @@ const HOT = [
  { n: '01', c: 'r', t: '다목적홀 입구게이트', z: '로비 · C홀 앞 → 다목적홀1', p: [-47.35, 5.8, 21.75], st: [-53, 17], desc: '폭 13.6 m · 높이 4 m, 안쪽 벽 9 m. 가운데 칸막이로 입구 IN / 출구 OUT, 안쪽 현황판 · 2025 CO-SHOW 사진 그래픽', img: [['n_hallgate_03', '투시도 1'], ['n_hallgate_04', '투시도 2'], ['n_hallgate_06', '앞면 치수'], ['n_hallgate_07', '안쪽 B면'], ['n_hallgate_08', '안쪽 C면']], src: '01.로비 입구게이트(다목적홀) 구조물 제작승인서_1027' },
  { n: '05', c: 'r', t: '로고 조형물', z: '로비 · C홀 / GATE 4 쪽', p: [-57.1, 3.8, 15], st: [-51.5, 15.5], desc: '3.65 × 2.4 × 0.7 m. 앞면 거울 마감 CO SHOW 글자', img: [['n_logo_03', '투시도'], ['n_logo_04', '치수']], src: '05.로비 로고조형물 제작승인서_1019' },
  { n: '06', c: 'r', t: '구 LED · 코아이 공기인형', z: '전시장 · 한가운데', p: [0, 9.2, CZ], st: [0, -21], desc: '구 LED 전광판 Φ3 m(받침 Φ4.8 m), 위에 코아이 공기인형', img: [['n_rest_03', '투시도 1'], ['n_rest_04', '투시도 2'], ['n_floor_01', '바닥동선 투시도'], ['n_rest_02', '배치도']], src: '06.내부 휴게공간 제작승인서_1026' },
- { n: '06', c: 'r', t: '파레트 휴게공간', z: '전시장 · 구 LED 양옆', p: [-10.7, 3.2, CZ], more: [[10.7, 3.2, CZ]], st: [-18.5, CZ], desc: '8.8 × 6.6 m, 3단(높이 1.05 m) 파레트 계단 + 빈백 40개', img: [['n_rest_05', '투시도'], ['n_rest_09', '치수']], src: '06.내부 휴게공간 제작승인서_1026' },
- { n: '06', c: 'r', t: '파레트 타워', z: '전시장 · 가운데 줄', p: [-31, 5, CZ], more: [[31, 5, CZ]], st: [-25, CZ], desc: '1.4 × 1.4 × 3.3 m, 65인치 LED TV', img: [['n_rest_06', '투시도'], ['n_rest_10', '치수']], src: '06.내부 휴게공간 제작승인서_1026' },
- { n: '06', c: 'r', t: '현위치 현황판 · 휴게 가구', z: '전시장 · 가운데 줄 양끝', p: [-52, 3.2, CZ], more: [[52, 3.2, CZ]], st: [-46, CZ], desc: '현황판 0.9 × 1.78 m. 주사위스툴 검정 40 · 흰색 40, 벤치 16 (가구 자리는 그림 보고 대략)', img: [['n_rest_07', '투시도'], ['n_rest_12', 'Furniture Plan']], src: '06.내부 휴게공간 제작승인서_1026' },
+ { n: '06', c: 'r', t: '파레트 휴게공간', z: '전시장 · 구 LED 양옆', p: [-10.7, 3.2, CZ], more: [[10.7, 3.2, CZ]], st: [-18.5, CZ], desc: '8.8 × 6.6 m, 파레트 1 ~ 7단 계단(높이 1.05 m, 칸별 단수 · 파란 파레트는 승인서 9쪽 그대로) + 빈백 40개', img: [['n_rest_05', '투시도'], ['n_rest_09', '치수']], src: '06.내부 휴게공간 제작승인서_1026' },
+ { n: '06', c: 'r', t: '파레트 타워', z: '전시장 · 가운데 줄', p: [-31, 5, CZ], more: [[31, 5, CZ]], st: [-25, CZ], desc: '1.4 × 1.1 × 3.3 m. 남 · 북 = 기둥 그래픽 0.84 × 1.47 m, 동 · 서 = 65인치 LED TV 세로', img: [['n_rest_06', '투시도'], ['n_rest_10', '치수']], src: '06.내부 휴게공간 제작승인서_1026' },
+ { n: '06', c: 'r', t: '현위치 현황판 · 휴게 가구', z: '전시장 · 가운데 줄 양끝', p: [-53.5, 3.2, CZ], more: [[53.5, 3.2, CZ]], st: [-47.5, CZ], desc: '현황판 0.9 × 1.78 m A형(면이 남 · 북, 그래픽 = 행사 지도 + 체험교육 목록). 주사위스툴 검정 40 · 흰색 40, 벤치 16 (가구 자리는 그림 보고 대략)', img: [['n_rest_07', '투시도'], ['n_rest_12', 'Furniture Plan']], src: '06.내부 휴게공간 제작승인서_1026' },
  { n: '1', c: 'y', t: '2층 난간 현수막', z: '로비 · 2층 난간 5곳', p: [61.4, 8.6, RAIL_Z], more: [[24.6, 8.6, RAIL_Z], [14.9, 8.6, RAIL_Z], [-14.7, 8.6, RAIL_Z], [-26, 8.6, RAIL_Z]], st: [40, 25], desc: '13 × 3.5 m 1개 · 4.3 × 3.5 m 1개 · 6 × 3.5 m 3개(코아이 길 안내 2개)', img: [['n_env_03', '1 (13 m)'], ['n_env_04', '1-2 · 1-3'], ['n_env_05', '1-4 · 1-5 (길 안내)'], ['n_env_02', '배치도']], src: '00.환경장식물 제작승인서_1022' },
  { n: '2', c: 'y', t: '2층 난간 가랜드', z: '로비 · 2층 난간', p: [5, 8.2, RAIL_Z], more: [[45, 8.2, RAIL_Z]], st: [5, 25], desc: '가랜드 0.35 × 0.425 m', img: [['n_env_06', '가랜드'], ['n_garland_01', '가랜드 시공 건 (10. 16.)']], src: '00.환경장식물 제작승인서_1022 · 가랜드 시공 건_1016' },
  { n: '3', c: 'y', t: '에스컬레이터 옆면 돔보컷팅', z: '로비 · 에스컬레이터 · 2층 유리난간', p: [-31, 7.4, 24], more: [[32, 7.4, 23]], st: [-31, 29], desc: '원고 재요청 (승인서 10. 22. 기준)', img: [['n_env_07', '설치 위치']], src: '00.환경장식물 제작승인서_1022' },
@@ -1212,9 +1357,10 @@ const HOT = [
  { n: '●', c: 'c', t: '코아이 공기인형 2', z: '로비 · 에스컬레이터 앞 기둥 옆', p: [22.2, 3.6, 21.0], st: [22.2, 13.5], desc: '서서 한 손 OK · 빨간 목도리 + 망토 · 콘센트 220V 1구 (높이 3 m는 10. 28. 기준)', img: [['n_coai_02', '승인서 투시도 (공기인형 2)'], ['n_coai_lay', '승인서 배치도 (3EA)']], src: '08.로비 코아이 공기인형 제작승인서_1023' },
  { n: '●', c: 'c', t: '코아이 공기인형 3 + 휴게공간', z: '로비 · 서쪽 끝 (GATE 4 쪽)', p: [-65.9, 5.8, 25.7], st: [-56, 19.5], desc: '10 × 8.5 m 회색 카펫 · 디자인유리세트 SET 04 6세트 · 공기인형 3(공기인형 1과 같은 모양) · 콘센트 220V 1구', img: [['n_coai_03', '승인서 투시도 (공기인형 3 + 휴게공간)'], ['n_coai_plan', '승인서 전기 · 집기도면'], ['n_coai_lay', '승인서 배치도 (3EA)']], src: '08.로비 코아이 공기인형 제작승인서_1023' },
  { n: '●', c: 'c', t: '지자체 부스', z: '로비 · B → C홀 사이', p: [-17.8, 4.4, 9.2], st: [-17.8, 16], desc: '1027 배치도 「광주시 지자체부스」 6 × 3 m 자리 · 꾸밈 시안은 없음', img: [['n_expogate_02', '1027 배치도']], src: '1027 배치도 · 공간조성계획_1015' },
- { n: '●', c: 'c', t: '다목적홀1 무대', z: '다목적홀1 · 개막식장', p: [-56, 9, 57], st: [-40, 57], desc: '레이허 타워와 메인 LED 무대 · 객석 (이전 시안 기준)', img: [['r06_3', '무대 시안'], ['r06_4', '객석 시안'], ['r15_hallbird', '다목적홀 조감']], src: '99.전시장시안 / 전체 수정' },
- { n: '●', c: 'c', t: '다목적홀1 라운지', z: '다목적홀1 · 객석 뒤', p: [-28, 4, 50], st: [-26, 62], desc: '객석 뒤 라운지 · 입구 아치 · LED 벽 (이전 시안 기준)', img: [['r06_1', '라운지 · 아치 시안 1'], ['r06_2', '라운지 · 아치 시안 2'], ['r06_5', '객석 뒤 LED 벽'], ['r06_6', '라운지 테이블']], src: '99.전시장시안 / 전체 수정' },
- { n: '●', c: 'c', t: '다목적홀2 · 경진대회 D · E · F Hall', z: '다목적홀2', p: [-4, 6.5, 57], st: [-4, 54], desc: '가벽으로 나눈 경진대회 공간 · 레이싱 트랙 (이전 시안 기준)', img: [['r14_seminar', '다목적홀 세미나 시안'], ['r14_seminar1', '경진대회 D · E Hall 통로']], src: '99.전시장시안 / 전체 수정' },
+ { n: '●', c: 'c', t: '다목적홀1 · 공식행사장 무대', z: '다목적홀1 · 개막식 · 11. 19. 발표회 · 시상식', p: [-58, 7.5, 56.3], st: [-40, 57], desc: '기존무대 H 900 · 18,280 × 5,630 위 LED-C 12,000 × 4,000. 레이어 타워(2,070 각) 무대 뒤 9 · 둘레 줄 높이 2 · 4 · 6 · 8 m. 무대 둘레 LED 2,000 × 3,000 넷 · 5,000 × 1,000 하나 · 콘솔 뒤 5,000 × 3,000. 객석 접이식 검정 350 · 가운데 통로 2 m', img: [['n_mh_stageplan', '무대 평면 (이충응 팀장 10. 23.)'], ['n_mh_stage', 'A 입면 · LED-C'], ['n_mh_rental', '렌탈 물자 배치(안) v3 (10. 28.)']], src: '2026 CO-SHOW stage-1023.pdf · 다목적홀1 렌탈 물자 배치(안) v3' },
+ { n: '●', c: 'c', t: '다목적홀1 콘솔 · 운영석', z: '다목적홀1 · 객석 뒤 (D)', p: [-26, 3, 55.5], st: [-31, 55.5], desc: '단 위 운영 · 조명 · 특효 · 음향 · 영상 데스크, 앞 테이블 7 · 의자 14 · 복합기 · 노트북 2. 오른쪽 아래 = 메달 비행 공기조형물 대기 자리', img: [['n_mh_rental', '렌탈 물자 배치(안) v3 ⑥'], ['n_mh_stageplan', '무대 평면 D']], src: '다목적홀1 렌탈 물자 배치(안) v3 (10. 28.)' },
+ { n: '●', c: 'c', t: '다목적홀2 · 세미나장 (경진대회 3구역)', z: '다목적홀2', p: [-6.25, 6.5, 57], st: [-6.25, 47], desc: '가벽으로 나눈 경진대회 공간. 이차전지 12 × 16 m(북서) · 미래자동차 B AUTO HACK 12 × 12 m(남서) · 미래자동차 A AUTO RACE 14 × 24 m(동) · 가운데 통로 5 m. 방 안 가구는 10. 21. 3D 그림을 옮긴 대략', img: [['n_mh_hall2_1', '다목적홀2 레이아웃 3D (10. 21.)'], ['n_mh_hall2_2', '통로 3D (10. 21.)']], src: '다목적홀2 컨소시엄 배치도 (전기 · 인터넷 배치 5 ~ 8쪽, 10. 29.) · 레이아웃 3D (10. 21.)' },
+ { n: '●', c: 'c', t: '다목적홀 대기실 5곳', z: '로비 ↔ 다목적홀 사이', p: [-30, 4.2, 34.5], st: [-30, 28], more: [[-67, 4.2, 34.5], [-54.5, 4.2, 34.5], [-5.4, 4.2, 34.5], [10, 4.2, 34.5]], desc: '1 VIP 대기실-1 · 2 출연자대기실-2 · 3 주최자사무실 1(두 칸) · 4 주최자사무실 2 · 5 VIP 대기실-2(내빈 B). 렌탈 집기(테이블 · 의자 · 거울 · 행거 · 선반 · 스탠딩 TV)를 방마다 넣음. 일자별 쓰임은 대기실 배정 PPT v4 · v5 준비 중', img: [['n_mh_rooms', '대기실 도면 v3 (10. 14. 실측)'], ['n_mh_rental', '렌탈 물자 배치(안) v3 ⑧ ⑨ ⑩']], src: '다목적홀 대기실 일자별 배정 v4 · 렌탈 물자 목록 v6 (10. 29.)' },
 ];
 function dotTex(label, color) {
   return canvasTex(128, 128, (g) => {
@@ -1243,7 +1389,7 @@ controls.target.set(10, 0, 5); camera.position.set(...far([10, 0, 5], [58, 150, 
 let mode = 'bird';
 const player = { x: 0, z: 18, yaw: 0, pitch: 0 };
 const WALK = [[HALL.x0 + .5, HALL.x1 - .5, HALL.z0 + .5, -0.3], [GATES.C[0] + .5, GATES.C[1] - .5, -1, 8], [GATES.B[0] + .5, GATES.B[1] - .5, -1, 8], [GATES.A[0] + .5, GATES.A[1] - .5, -1, 8],
-  [LOBBY.x0 + .5, LOBBY.x1 - .3, 7.3, 30.6], [-50.5, -43.5, 30, 39], [-2.5, 2.5, 30, 39], [MH.x0 + .7, MH.x1 - .7, MH.z0 + .7, MH.z1 - .7], [LOBBY.x1 - 2, 128, -10, 60], [LOBBY.x0 - 15, LOBBY.x0 + 1, 10, 31]];
+  [LOBBY.x0 + .5, LOBBY.x1 - .3, 7.3, 30.6], [-50.5, -43.5, 30, 39], [-2.5, 2.5, 30, 39], [MH.x0 + .7, MH.mid - .5, MH.z0 + .7, MH.z1 - .7], [MH.mid + .5, MH.x1 - .7, MH.z0 + .7, MH.z1 - .7], ...ROOMS.flatMap(r => [[r.x0 + .4, r.x1 - .4, RZ0 + .3, RZ1 - .3], [r.door - .5, r.door + .5, 30.2, RZ0 + .5]]), [LOBBY.x1 - 2, 128, -10, 60], [LOBBY.x0 - 15, LOBBY.x0 + 1, 10, 31]];
 const walkable = (x, z) => WALK.some(([a, b, c, d]) => x >= a && x <= b && z >= c && z <= d);
 const tw = { on: false };
 function lookYawPitch(fx, fy, fz, tx, ty, tz) { const dx = tx - fx, dz = tz - fz, dy = ty - fy; return [Math.atan2(-dx, -dz), Math.atan2(dy, Math.hypot(dx, dz))]; }
@@ -1273,7 +1419,7 @@ function goBird(target, pos, dur = 1.4) {
 const ease = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
 
 const ZONES = { all: [[10, 0, 5], [58, 150, 132]], lobby: [[10, 0, 19], [25, 70, 100]], expo: [[0, 0, -31], [0, 105, 55]], hall1: [[-43, 0, 57], [-8, 55, 108]], hall2: [[-4, 0, 57], [25, 48, 102]], b3: [[-38, 0, -13], [-34, 30, -46]] };   // b3 = 3D 부스 3곳 (주소 #b3)
-const ZWALK = { lobby: [[44, 18], [0, 4, 13]], expo: [[0, -8], [0, 2, CZ]], hall1: [[-37, 57], [-63, 4, 57]], hall2: [[4, 57], [4, 0.5, 46]] };
+const ZWALK = { lobby: [[44, 18], [0, 4, 13]], expo: [[0, -8], [0, 2, CZ]], hall1: [[-37, 57], [-63, 4, 57]], hall2: [[-6.25, 73], [-6.25, 3, 40]] };
 document.querySelectorAll('#zones button').forEach(b => b.onclick = () => {
   document.querySelectorAll('#zones button').forEach(x => x.classList.remove('on')); b.classList.add('on'); stopTour();
   if (mode === 'walk' && b.dataset.z !== 'all') { const st = ZWALK[b.dataset.z]; goWalk(st[0][0], st[0][1], st[1]); }
@@ -1396,8 +1542,10 @@ const TOUR = [
   [[-51.5, 15.5], [-57.1, 1.4, 15], '로고 조형물', '05 로고 조형물'],
   [[-53, 17], [-46.5, 2.3, 25], '다목적홀 입구게이트', '입구 IN · 출구 OUT'],
   [[-47.35, 36], [-47.35, 2.5, 50], '다목적홀1 입구', ''],
-  [[-37, 57], [-63, 4.2, 57], '다목적홀1 — 개막식 무대', '레이허 타워 · 메인 LED (이전 시안)'],
-  [[4, 57], [4, 0.5, 46], '다목적홀2 — 경진대회 D · E · F Hall', '(이전 시안)'],
+  [[-37, 57], [-63, 4.2, 56.3], '다목적홀1 · 공식행사장', '레이어 타워 · LED-C 12 × 4 m · 객석 350 (무대 도면 10. 23.)'],
+  [[-31, 55.5], [-25, 2.2, 55.5], '다목적홀1 콘솔 · 운영석', '렌탈 배치(안) v3 ⑥'],
+  [[-6.25, 73], [-6.25, 3, 40], '다목적홀2 · 세미나장', '이차전지 · 미래자동차 A · B (컨소시엄 배치도 10. 29.)'],
+  [[-30, 28], [-54.5, 2.2, 31], '다목적홀 대기실 5곳', 'VIP-1 · 출연자-2 · 주최자사무실 1 · 2 · VIP-2'],
 ];
 const tour = { on: false, i: 0, timer: 0 };
 const cap = document.getElementById('cap');
@@ -1419,7 +1567,7 @@ document.getElementById('bTour').onclick = () => {
 /* ---------- 미니맵 ---------- */
 const mini = document.getElementById('mini'), mg = mini.getContext('2d');
 const ABBR = { '그린바이오': '그바', '에너지신산업': '에너지', '에코업': '에코업', '이차전지': '이차전지', '반도체소부장': '반소', '첨단소재나노융합': '첨단', '미래자동차': '미래차', '데이터보안활용융합': '데이터', '차세대통신': '차통', '사물인터넷': '사물', '바이오헬스': '바이오', '차세대디스플레이': '차디', '차세대반도체': '차반', '지능형로봇': '로봇', '항공드론': '드론', '실감미디어': '실감', '빅데이터': '빅데', '인공지능': '인공' };   // 미니맵 줄임말
-const MB_ALL = { x0: -80, x1: 115, z0: -66, z1: 80 }, MB_HALL = { x0: -73, x1: 73, z0: -63, z1: 1.5 }; let MB = MB_ALL;   // 전시장 안 = 전시장 크게
+const MB_ALL = { x0: -80, x1: 115, z0: -66, z1: 80 }, MB_HALL = { x0: -73, x1: 73, z0: -63, z1: 1.5 }, MB_MH = { x0: -75, x1: 19, z0: 29.5, z1: 77.5 }; let MB = MB_ALL;   // MB_MH = 다목적홀 · 대기실 안 (10. 30.)   // 전시장 안 = 전시장 크게
 const m2 = (x, z) => [(x - MB.x0) / (MB.x1 - MB.x0) * mini.width, (z - MB.z0) / (MB.z1 - MB.z0) * mini.height];
 function rectM(x0, x1, z0, z1, c) { const [a, b] = m2(x0, z0), [d, e] = m2(x1, z1); mg.fillStyle = c; mg.fillRect(a, b, d - a, e - b); }
 let MFS = {};                                                                  // 미니맵 글자 크기 (보기 범위마다 하나)
@@ -1431,8 +1579,8 @@ function miniFs() {
 }
 function drawMini() {
   mg.clearRect(0, 0, mini.width, mini.height);
-  { const pz0 = mode === 'walk' ? player.z : controls.target.z, px0 = mode === 'walk' ? player.x : controls.target.x; MB = pz0 < 3 && Math.abs(px0) < 75 ? MB_HALL : MB_ALL; }
-  rectM(HALL.x0, HALL.x1, HALL.z0, HALL.z1, '#3a4a8c'); rectM(LOBBY.x0, LOBBY.x1, LOBBY.z0, LOBBY.z1, '#cfd8e6'); rectM(MH.x0, MH.x1, MH.z0, MH.z1, '#c9b48d');
+  { const pz0 = mode === 'walk' ? player.z : controls.target.z, px0 = mode === 'walk' ? player.x : controls.target.x; MB = pz0 < 3 && Math.abs(px0) < 75 ? MB_HALL : pz0 > 31.2 && px0 < 18 ? MB_MH : MB_ALL; }
+  rectM(HALL.x0, HALL.x1, HALL.z0, HALL.z1, '#3a4a8c'); rectM(LOBBY.x0, LOBBY.x1, LOBBY.z0, LOBBY.z1, '#cfd8e6'); rectM(MH.x0, MH.mid, MH.z0, MH.z1, '#c9b48d'); rectM(MH.mid, MH.x1, MH.z0, MH.z1, '#a9c2b4'); ROOMS.forEach(r => rectM(r.x0, r.x1, RZ0, RZ1, r.name.startsWith('VIP') ? '#e07a86' : '#e8a8b0'));
   booths.forEach(b => { mg.fillStyle = TILE_COL[b.tile - 1]; mg.beginPath(); b.pts.forEach(([x, z], i) => { const [u, v] = m2(x, z); i ? mg.lineTo(u, v) : mg.moveTo(u, v); }); mg.fill(); });
   booths.forEach(b => {                                                        // 부스 줄임말 (1~3글자, 한 글자씩 세로로)
     const cx = b.pts.reduce((a, p) => a + p[0], 0) / 4, cz = b.pts.reduce((a, p) => a + p[1], 0) / 4, [u, v] = m2(cx, cz), ww = m2(b.pts[1][0], 0)[0] - m2(b.pts[0][0], 0)[0];
@@ -1441,7 +1589,14 @@ function drawMini() {
     mg.font = `900 ${fs}px ${FONT}`; mg.fillStyle = '#fff'; mg.strokeStyle = 'rgba(0,0,0,.6)'; mg.lineWidth = Math.max(2, fs * 0.16); mg.lineJoin = 'round'; mg.textAlign = 'center'; mg.textBaseline = 'middle';
     ch.forEach((c, i) => { const y = v + (i - (ch.length - 1) / 2) * fs; mg.strokeText(c, u, y); mg.fillText(c, u, y); });
   });
-  rectM(MH.x0, MH.x0 + 8, 43, 71, '#7a4b2a');
+  rectM(-61, -55.4, 47.2, 65.4, '#7a4b2a'); rectM(-26.8, -25, 48.3, 62.7, '#5a3b2a');       // 다목적홀1 무대 · 콘솔
+  rectM(MH.mid + .25, -8.75, MH.z0, 53.6, '#86b09f'); rectM(MH.mid + .25, -8.75, 58.6, 70.6, '#86b09f'); rectM(-3.75, 10.25, 43.6, 67.6, '#6f9e8a');   // 다목적홀2 경진대회 3구역 (10. 29. 배치도)
+  { const big = MB === MB_MH, lab = (t, x, z, f) => { const [u, v] = m2(x, z); mg.font = `900 ${f}px ${FONT}`; mg.textAlign = 'center'; mg.textBaseline = 'middle'; mg.lineWidth = Math.max(2, f * 0.2); mg.strokeStyle = 'rgba(0,0,0,.65)'; mg.fillStyle = '#fff'; mg.strokeText(t, u, v); mg.fillText(t, u, v); };
+    const f = big ? 13 : 8;
+    lab('다목적홀1', -42, big ? 69 : 57, f); lab('공식행사장', -42, big ? 72.5 : 64, f * 0.85);
+    lab('다목적홀2', big ? 3 : -4, big ? 70.6 : 57, f); lab('세미나장', big ? 3 : -4, big ? 73.6 : 64, f * 0.85);
+    if (big) [['이차전지', -14.75, 45.6], ['미래차 B', -14.75, 64.6], ['미래차 A', 3.25, 55.6]].forEach(([t, x, z]) => lab(t, x, z, 10));
+    if (big) ROOMS.forEach(r => lab(String(r.no), (r.x0 + r.x1) / 2, (RZ0 + RZ1) / 2, 11)); }
   HOT.forEach(h => { if (h.c === 'c') return; [h.p, ...(h.more || [])].forEach(p => { const [x, y] = m2(p[0], p[2]); mg.fillStyle = COLORS[h.c]; mg.beginPath(); mg.arc(x, y, 3.5, 0, 7); mg.fill(); }); });
   const px = mode === 'walk' ? player.x : controls.target.x, pz = mode === 'walk' ? player.z : controls.target.z; const [x, y] = m2(px, pz);
   mg.save(); mg.translate(x, y);
