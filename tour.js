@@ -885,32 +885,40 @@ fontLoader.load('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helve
   mk('CO', 1.25, 1.65, 0.06, 3.4); mk('SHOW', 0.62, 0.45, 0.41, 3.5);
 });
 
-/* ---------- 코아이 공기인형 (10. 28. 실물 사진 기준: 첨부 115111_1~3) ---------- */
-// kind: 'headHeart' = 5 m 머리하트(앉음 · 두 손 볼 · 윙크 · 머리 위 분홍 하트) / 'heart' = 5 m 하트(앉음 · 빨간 하트 안음)
-//       'stand' = 3 m (서 있음 · 한 손 흔듦). H = 귀 끝까지 높이(m). 모양 비율은 사진을 보고 맞춤(도면 아님)
+/* ---------- 코아이 공기인형 (10. 29. 로비 코아이 공기인형 제작승인서_1023 기준) ---------- */
+// kind: 'cover' = 앉음 · 두 손으로 얼굴 가림(손가락 사이 윙크) · 머리 분홍 리본 · 큰 파란 발바닥 (승인서 공기인형 1 · 3)
+//       'stand' = 서 있음 · 빨간 목도리 + 망토 · 한 손 OK · 얼굴 > O < (승인서 공기인형 2)
+// H = 맨 위까지 높이(m). 모양 비율 · 손 모양은 승인서 투시도를 보고 맞춤(도면 아님)
 const coaiFace = {};
 function coaiFaceTex(kind) {
   if (coaiFace[kind]) return coaiFace[kind];
-  return (coaiFace[kind] = canvasTex(512, 384, (g, w, h) => {
-    const gr = g.createRadialGradient(w * .45, h * .4, 20, w / 2, h / 2, w * .55); gr.addColorStop(0, '#1a1d26'); gr.addColorStop(1, '#030407');
-    g.fillStyle = gr; g.beginPath(); g.ellipse(w / 2, h / 2, w * .49, h * .48, 0, 0, 7); g.fill();
-    g.fillStyle = 'rgba(255,255,255,.10)'; g.beginPath(); g.ellipse(w * .33, h * .22, w * .2, h * .07, -0.25, 0, 7); g.fill();
-    const C = '#45d4ff'; g.shadowColor = C; g.shadowBlur = 18; g.strokeStyle = C; g.fillStyle = C; g.lineCap = 'round'; g.lineWidth = 24;
-    const happy = (cx, cy) => { g.beginPath(); g.arc(cx, cy + 26, 40, Math.PI * 1.18, Math.PI * 1.82); g.stroke(); };
-    const mouth = (cx, cy, rx, ry) => { g.beginPath(); g.moveTo(cx - rx, cy); g.quadraticCurveTo(cx, cy - ry * .18, cx + rx, cy); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI); g.fill(); };
+  return (coaiFace[kind] = canvasTex(512, 512, (g, w, h) => {
+    const gr = g.createRadialGradient(w * .42, h * .38, 20, w / 2, h / 2, w * .52); gr.addColorStop(0, '#20232c'); gr.addColorStop(1, '#040507');
+    g.fillStyle = gr; g.beginPath(); g.arc(w / 2, h / 2, w * .49, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.09)'; g.beginPath(); g.ellipse(w * .36, h * .2, w * .2, h * .06, -0.35, 0, 7); g.fill();
+    const C = '#5ef0d8'; g.shadowColor = C; g.shadowBlur = 16; g.strokeStyle = C; g.fillStyle = C; g.lineCap = g.lineJoin = 'round'; g.lineWidth = 26;
+    const chev = (cx, cy, s, dir) => { g.beginPath(); g.moveTo(cx - dir * s, cy - s * .8); g.lineTo(cx + dir * s, cy); g.lineTo(cx - dir * s, cy + s * .8); g.stroke(); };
     if (kind === 'stand') {
-      [180, 332].forEach(x => { g.beginPath(); g.ellipse(x, 158, 24, 30, 0, 0, 7); g.fill(); });
-      mouth(256, 214, 74, 62);
-    } else if (kind === 'headHeart') {
-      g.beginPath(); g.moveTo(150, 140); g.lineTo(198, 162); g.lineTo(150, 184); g.stroke();      // 윙크 >
-      happy(330, 150); mouth(256, 218, 70, 58);
-    } else { happy(180, 150); happy(332, 150); mouth(256, 214, 80, 70); }
+      chev(118, 262, 26, 1);                                                    // >
+      g.lineWidth = 44; g.beginPath(); g.arc(232, 268, 66, 0, 7); g.stroke();  // 큰 O
+      g.shadowBlur = 0; g.fillStyle = '#050608'; g.beginPath(); g.arc(232, 268, 22, 0, 7); g.fill();
+      g.lineWidth = 26; chev(388, 238, 30, -1);                                // <
+    } else {
+      chev(170, 168, 34, 1);                                                    // 윙크 >
+      g.beginPath(); g.ellipse(350, 176, 40, 30, 0.2, 0, 7); g.fill();          // 손가락 사이 눈
+      g.beginPath(); g.ellipse(262, 318, 70, 34, 0, 0, 7); g.fill();            // 입 (손에 가림)
+    }
   }));
 }
-const coaiLogo = canvasTex(512, 200, (g, w, h) => {
-  g.fillStyle = '#1d74d0'; g.beginPath(); g.roundRect(60, 46, 392, 108, 18); g.fill();
-  g.fillStyle = '#fff'; g.font = `800 82px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('COSS', 286, 104);
-  g.strokeStyle = '#fff'; g.lineWidth = 7; [24, 15, 6].forEach(r => { g.beginPath(); g.arc(128, 100, r, 0, 7); g.stroke(); });
+const coaiLogo = canvasTex(512, 240, (g, w, h) => {
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#2a73c6'; g.fillRect(14, 56, w - 28, h - 70);
+  g.fillStyle = '#1d4f9a'; g.font = `700 30px Arial,${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Convergence and Open Sharing System', w * .58, 32);
+  g.fillStyle = '#fff'; g.font = `italic 900 118px Arial Black,Arial,${FONT}`; g.fillText('COSS', w * .63, 152);
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(84, 132, 62, 0, 7); g.fill();       // 지구 무늬 로고
+  g.strokeStyle = '#2a73c6'; g.lineWidth = 9; g.lineCap = 'round';
+  [[-34, .9], [-12, 1.2], [10, 1.25], [32, 1]].forEach(([dy, k]) => { g.beginPath(); g.moveTo(84 - 50 * k * .8, 132 + dy); g.bezierCurveTo(84 - 20, 132 + dy - 14, 84 + 20, 132 + dy + 14, 84 + 50 * k * .8, 132 + dy); g.stroke(); });
+  g.beginPath(); g.arc(84, 132, 62, 0, 7); g.stroke();
 });
 function heartGeo(s, d) {
   const sh = new THREE.Shape(); sh.moveTo(0, -0.5);
@@ -921,64 +929,142 @@ function heartGeo(s, d) {
 }
 function coai(kind, x, z, ry = 0, H = 5, y = 0) {
   const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; scene.add(g);
-  const wht = M(0xf7f8fa, { roughness: .38 }), blu = M(0x1d74d0, { roughness: .35 }), glv = M(0x1a1b20, { roughness: .5 });
-  const ell = (rx, ry_, rz, px, py, pz, mat) => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 28), mat); m.scale.set(rx, ry_, rz); m.position.set(px, py, pz); g.add(m); return m; };
-  const limb = (a, b, r, mat) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A); const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, Math.max(0.01, d.length()), 8, 16), mat); m.position.copy(A).add(Bv).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); g.add(m); return m; };
-  const glove = (p, rot, s) => { const h = new THREE.Group(); h.position.set(...p); h.rotation.set(...rot); h.scale.setScalar(s); g.add(h);
-    const palm = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), glv); palm.scale.set(0.42, 0.46, 0.26); h.add(palm);
-    [-0.27, -0.09, 0.09, 0.27].forEach((o, i) => { const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.26 - Math.abs(o) * 0.25, 6, 10), glv); f.position.set(o, 0.5 - Math.abs(o) * 0.3, 0); f.rotation.z = -o * 0.5; h.add(f); });
-    const th = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.2, 6, 10), glv); th.position.set(-0.42, 0.05, 0.05); th.rotation.z = 0.9; h.add(th); };
-  // 머리 · 얼굴 화면 · 파란 귀 · 흰 귀(안테나)
-  const sit = kind !== 'stand', K = sit ? 1 : 0.6;
-  const hy = sit ? 3.05 : 2.12, hr = [1.42 * K, 1.12 * K, 1.2 * K];
-  ell(...hr, 0, hy, 0, wht);
-  const face = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32, Math.PI / 2 - Math.PI * 0.36, Math.PI * 0.72, Math.PI * 0.2, Math.PI * 0.62),
-    new THREE.MeshStandardMaterial({ map: coaiFaceTex(kind), emissiveMap: coaiFaceTex(kind), emissive: 0xffffff, emissiveIntensity: 0.9, roughness: .12, metalness: .2, transparent: true, alphaTest: 0.5 }));
-  face.scale.set(hr[0] * 1.012, hr[1] * 1.012, hr[2] * 1.012); face.position.y = hy; g.add(face);
-  [-1, 1].forEach(o => {
-    const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.46 * K, 0.5 * K, 0.42 * K, 28), blu); pod.rotation.z = Math.PI / 2; pod.position.set(o * hr[0] * 0.97, hy - 0.05 * K, -0.05 * K); g.add(pod);
-    const ear = new THREE.Mesh(new THREE.CapsuleGeometry(0.21 * K, 1.25 * K, 8, 16), wht); ear.scale.z = 0.6; ear.position.set(o * 1.13 * K, hy + 1.18 * K, -0.12 * K); ear.rotation.z = -o * 0.22; g.add(ear);
-    const st = new THREE.Mesh(new THREE.CapsuleGeometry(0.1 * K, 0.85 * K, 6, 12), blu); st.scale.z = 0.6; st.position.set(o * 1.08 * K, hy + 1.05 * K, 0.0); st.rotation.z = -o * 0.22; g.add(st);   // 귀 안쪽 파란 줄
-  });
-  if (sit) {
-    // 몸통(앉음) · 가슴 COSS · 다리 앞으로 · 파란 발바닥
-    ell(1.28, 1.02, 1.08, 0, 1.3, 0, wht); ell(1.38, 0.55, 1.2, 0, 0.55, 0.05, wht);
-    const lg = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 20, Math.PI / 2 - 0.55, 1.1, Math.PI * 0.4, Math.PI * 0.2), new THREE.MeshStandardMaterial({ map: coaiLogo, transparent: true, alphaTest: 0.5, roughness: .4 }));
-    lg.scale.set(1.295, 1.03, 1.095); lg.position.y = 1.3; g.add(lg);
-    [-1, 1].forEach(o => {
-      limb([o * 0.72, 0.55, 0.4], [o * 0.86, 0.6, 1.35], 0.5, wht);
-      const sole = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.6, 0.34, 36), blu); sole.rotation.set(Math.PI / 2, 0, 0); sole.rotation.y = o * 0.18; sole.position.set(o * 0.92, 0.66, 1.88); g.add(sole);
-      ell(0.7, 0.7, 0.3, o * 0.9, 0.66, 1.62, wht);
-      ell(0.42, 0.42, 0.42, o * 1.22, 1.78, 0.1, blu);                                                     // 파란 어깨
-    });
-    if (kind === 'heart') {
-      [-1, 1].forEach(o => { limb([o * 1.25, 1.75, 0.2], [o * 1.0, 1.55, 1.1], 0.32, wht); glove([o * 0.86, 1.55, 1.42], [0.1, 0, o * 0.6], 0.95); });
-      const hm = new THREE.Mesh(heartGeo(1.15, 0.28), M(0xec2b2b, { roughness: .3 })); hm.position.set(0, 1.45, 1.5); g.add(hm);
+  const wht = M(0xf6f7f9, { roughness: .32 }), blu = M(0x1f6fd0, { roughness: .3 }), red = M(0xd8222a, { roughness: .35 }), seam = M(0xc9ced6, { roughness: .5 });
+  const glv = kind === 'stand' ? M(0x141519, { roughness: .45 }) : M(0x4a4e57, { roughness: .45 });
+  const ell = (rx, ry_, rz, px, py, pz, mat, seg = 40) => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, seg, Math.round(seg * .7)), mat); m.scale.set(rx, ry_, rz); m.position.set(px, py, pz); g.add(m); return m; };
+  const limb = (a, b, r, mat) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A); const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, Math.max(0.01, d.length()), 8, 18), mat); m.position.copy(A).add(Bv).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); g.add(m); return m; };
+  const cuff = (a, b, r) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A).normalize(); const t = new THREE.Mesh(new THREE.TorusGeometry(r, r * .42, 14, 28), blu); t.position.copy(Bv).addScaledVector(d, -r * .5); t.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), d); g.add(t); };
+  // 장갑: 손바닥 +z · 손가락 +y. pose 'open'(펼침) · 'ok'(엄지 · 검지 동그라미 + 세 손가락 펴기). side = 엄지 쪽(−1 왼손, 1 오른손)
+  const glove = (p, rot, s, pose = 'open', side = 1) => { const h = new THREE.Group(); h.position.set(...p); h.rotation.order = 'ZYX'; h.rotation.set(...rot); h.scale.setScalar(s); g.add(h);
+    const palm = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), glv); palm.scale.set(0.44, 0.48, 0.24); h.add(palm);
+    const fing = (o, len, fan, rx = 0) => { const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, len, 6, 12), glv); f.position.set(o + Math.sin(fan) * (0.3 + len / 2), 0.36 + Math.cos(fan) * (len / 2 + 0.06), 0); f.rotation.set(rx, 0, -fan); h.add(f); };
+    if (pose === 'ok') {
+      [[0, .34, 0.02], [0.16, .3, 0.1], [0.32, .22, 0.2]].forEach(([o, l, fan]) => fing(-side * o, l, -side * fan));
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.085, 12, 24), glv); ring.position.set(side * 0.34, 0.12, 0.05); h.add(ring);
+      const dot = new THREE.Mesh(new THREE.CircleGeometry(0.11, 20), new THREE.MeshBasicMaterial({ color: 0x5ef0d8, toneMapped: false })); dot.position.set(side * 0.34, 0.12, 0.06); h.add(dot);
     } else {
-      [-1, 1].forEach(o => { limb([o * 1.25, 1.75, 0.2], [o * 0.88, 2.2, 0.82], 0.32, wht); glove([o * 0.62, 2.45, 1.05], [-0.25, 0, o * 0.25], 1.0); });
-      const pk = M(0xff5aa8, { roughness: .3 });
-      [[0.25, 4.32, 0.25, 0.62, 0.25], [0.85, 4.18, 0.2, 0.55, -0.35]].forEach(([px, py, pz, s, rz]) => { const m = new THREE.Mesh(heartGeo(s, 0.18), pk); m.position.set(px, py, pz); m.rotation.z = rz; g.add(m); });
+      [[-0.27, .3, -0.22], [-0.09, .36, -0.07], [0.09, .36, 0.07], [0.27, .3, 0.22]].forEach(([o, l, fan]) => fing(o * .55, l, fan));
+      const th = new THREE.Mesh(new THREE.CapsuleGeometry(0.115, 0.24, 6, 12), glv); th.position.set(side * 0.46, 0.0, 0.04); th.rotation.z = side * 0.95; h.add(th);
     }
+    return h; };
+  // 머리 · 검은 얼굴 화면 · 흰 테두리(후드) · 파란 귀 통 · 흰 귀(안테나)
+  const st = kind === 'stand';
+  const hy = st ? 4.35 : 3.0, hr = st ? [1.95, 1.62, 1.68] : [1.3, 1.12, 1.18], fa = st ? 0.84 : 1.0;   // fa = 얼굴 반지름 각(rad)
+  ell(...hr, 0, hy, 0, wht, 56);
+  const faceMat = new THREE.MeshStandardMaterial({ map: coaiFaceTex(kind), emissiveMap: coaiFaceTex(kind), emissive: 0xffffff, emissiveIntensity: 0.85, roughness: .1, metalness: .25, transparent: true, alphaTest: 0.5 });
+  const face = new THREE.Mesh(new THREE.SphereGeometry(1, 56, 40, Math.PI / 2 - fa, fa * 2, Math.PI / 2 - fa, fa * 2), faceMat);
+  face.scale.set(hr[0] * 1.012, hr[1] * 1.012, hr[2] * 1.012); face.position.y = hy; g.add(face);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(Math.sin(fa * .97), st ? 0.085 : 0.1, 16, 64), wht);
+  rim.position.set(0, hy, Math.cos(fa * .97) * hr[2] * 1.01); rim.scale.set(hr[0], hr[1], hr[2]); g.add(rim);
+  const seamR = new THREE.Mesh(new THREE.TorusGeometry(1.004, 0.006, 6, 80), seam); seamR.scale.set(hr[0], hr[1], hr[2]); seamR.position.y = hy; g.add(seamR);   // 공기인형 이음선
+  [-1, 1].forEach(o => {
+    const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.44, 0.5, 32), blu); pod.rotation.z = Math.PI / 2;
+    if (st) { pod.scale.set(1.15, 1, 1.5); pod.position.set(o * hr[0] * 0.98, hy - 0.15, -0.1); } else { pod.position.set(o * hr[0] * 0.97, hy - 0.05, -0.05); }
+    g.add(pod);
+    const E = st ? [0.3, 1.25, 2.12, hy + 1.05, 0.12] : [0.21, 1.2, 1.12, hy + 1.18, 0.22];
+    const ear = new THREE.Mesh(new THREE.CapsuleGeometry(E[0], E[1], 8, 18), wht); ear.scale.z = 0.62; ear.position.set(o * E[2], E[3], -0.12); ear.rotation.z = -o * E[4]; g.add(ear);
+    const sb = new THREE.Mesh(new THREE.CapsuleGeometry(E[0] * .45, E[1] * .7, 6, 12), blu); sb.scale.z = 0.62; sb.position.set(o * (E[2] - E[0] * .55), E[3] - 0.05, -0.12); sb.rotation.z = -o * E[4]; g.add(sb);   // 귀 안쪽 파란 줄
+  });
+  if (!st) {
+    // 앉음: 몸통 · 목 테두리 · 가슴 COSS 명찰 · 다리 앞으로 · 큰 파란 발바닥(흰 테)
+    ell(1.12, 1.0, 1.02, 0, 1.28, 0, wht); ell(1.32, 0.56, 1.18, 0, 0.55, 0.05, wht);
+    const col = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.16, 14, 40), wht); col.rotation.x = Math.PI / 2; col.scale.set(1, 0.9, 1); col.position.set(0, 2.08, 0.05); g.add(col);
+    const lg = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 20, Math.PI / 2 - 0.5, 1.0, Math.PI * 0.4, Math.PI * 0.19), new THREE.MeshStandardMaterial({ map: coaiLogo, roughness: .45 }));
+    lg.scale.set(1.13, 1.01, 1.03); lg.position.y = 1.28; g.add(lg);
+    [-1, 1].forEach(o => {
+      limb([o * 0.68, 0.6, 0.35], [o * 0.95, 0.68, 1.45], 0.56, wht);
+      ell(0.74, 0.74, 0.26, o * 1.0, 0.76, 1.98, blu);                                                    // 파란 발바닥(살짝 볼록)
+      const sr = new THREE.Mesh(new THREE.TorusGeometry(0.74, 0.11, 12, 40), wht); sr.position.set(o * 1.0, 0.76, 1.92); g.add(sr);
+      ell(0.72, 0.74, 0.34, o * 0.98, 0.74, 1.72, wht);
+      // 팔: 어깨 → 팔꿈치(옆 아래) → 손목(얼굴 앞) · 파란 손목 · 손바닥으로 얼굴 가림
+      const sh = [o * 1.08, 1.85, 0.15], el = [o * 1.42, 1.55, 0.95], wr = [o * 0.68, hy - 0.86, 1.22];
+      limb(sh, el, 0.34, wht); limb(el, wr, 0.3, wht); cuff(el, wr, 0.33);
+      glove([o * 0.45, hy - 0.36, hr[2] + 0.06], [-0.18, Math.PI, -o * 0.3], 0.86, 'open', o);
+    });
+    // 분홍 리본 (하트 두 개 + 매듭, 머리 위 조금 왼쪽)
+    const pk = M(0xe8379b, { roughness: .28 }), bw = new THREE.Group(); bw.position.set(-0.32, hy + hr[1] * 0.93, 0.3); bw.rotation.set(-0.35, 0, 0.18); g.add(bw);
+    [-1, 1].forEach(o => { const m = new THREE.Mesh(heartGeo(0.62, 0.2), pk); m.position.set(o * 0.36, 0.02, 0); m.rotation.z = -o * Math.PI * 0.42; bw.add(m); });
+    const kn = new THREE.Mesh(new THREE.SphereGeometry(0.15, 20, 14), pk); kn.scale.set(1, 1.1, 0.9); bw.add(kn);
   } else {
-    // 3 m: 서 있는 원통 몸통 · 앞 COSS · 한 팔 들어 흔듦
-    const prof = [[0, 0], [0.62, 0], [0.66, 0.12], [0.7, 0.6], [0.7, 1.05], [0.62, 1.38], [0.4, 1.56], [0, 1.6]].map(([r, yy]) => new THREE.Vector2(r, yy));
-    const body = new THREE.Mesh(new THREE.LatheGeometry(prof, 48), wht); g.add(body);
-    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.665, 0.665, 0.05, 48, 1, true), M(0x3a3f4a)); ring.position.y = 0.08; g.add(ring);
-    const lg = new THREE.Mesh(new THREE.CylinderGeometry(0.705, 0.705, 0.6, 40, 1, true, -0.78, 1.56), new THREE.MeshStandardMaterial({ map: coaiLogo, transparent: true, alphaTest: 0.5, roughness: .4 }));
-    lg.position.y = 0.88; g.add(lg);
-    [-1, 1].forEach(o => ell(0.26, 0.26, 0.26, o * 0.68, 1.36, 0.02, blu));
-    limb([-0.72, 1.4, 0.05], [-1.15, 1.9, 0.12], 0.17, blu); limb([-1.15, 1.9, 0.12], [-1.25, 2.4, 0.18], 0.16, wht); glove([-1.28, 2.66, 0.2], [0, 0, 0.15], 0.6);
-    limb([0.72, 1.4, 0.05], [0.95, 1.0, 0.15], 0.17, blu); limb([0.95, 1.0, 0.15], [1.02, 0.62, 0.22], 0.16, wht); glove([1.03, 0.4, 0.24], [Math.PI, 0, -0.1], 0.6);
+    // 서 있음: 달걀형 몸통 · 아래 검은 띠 · 앞 COSS 명찰 · 빨간 목도리 + 매듭 · 등 망토(겉 빨강 · 안 검정)
+    const prof = [[0, 0], [1.18, 0], [1.26, 0.14], [1.44, 0.7], [1.6, 1.5], [1.64, 2.1], [1.5, 2.7], [1.1, 3.08], [0, 3.18]].map(([r, yy]) => new THREE.Vector2(r, yy));
+    const body = new THREE.Mesh(new THREE.LatheGeometry(prof, 64), wht); g.add(body);
+    const dk = M(0x2a2e36, { roughness: .5 });
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(1.205, 1.205, 0.12, 64, 1, true), dk); band.position.y = 0.09; g.add(band);
+    [-0.55, 0, 0.55].forEach(a => { const v = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.07, 0.05), dk); v.position.set(Math.sin(a) * 1.3, 0.36, Math.cos(a) * 1.3); v.rotation.y = a; g.add(v); });   // 아래 통풍 줄
+    const seam2 = new THREE.Mesh(new THREE.TorusGeometry(1.605, 0.008, 6, 80), seam); seam2.rotation.x = Math.PI / 2; seam2.position.y = 1.5; g.add(seam2);
+    const lg = new THREE.Mesh(new THREE.CylinderGeometry(1.645, 1.635, 1.05, 48, 1, true, -0.72, 1.44), new THREE.MeshStandardMaterial({ map: coaiLogo, roughness: .45 }));
+    lg.position.y = 1.9; g.add(lg);
+    const sc = new THREE.Mesh(new THREE.TorusGeometry(1.32, 0.24, 16, 56), red); sc.rotation.x = Math.PI / 2; sc.scale.set(1, 0.92, 1); sc.position.y = 3.02; g.add(sc);
+    const bt = new THREE.Group(); bt.position.set(0.15, 2.9, 1.42); g.add(bt);
+    [-1, 1].forEach(o => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), red); m.scale.set(0.42, 0.24, 0.17); m.position.set(o * 0.4, 0, 0); m.rotation.z = o * 0.12; bt.add(m); });
+    const kn = new THREE.Mesh(new THREE.SphereGeometry(0.2, 18, 12), red); kn.scale.set(1, 1.1, 0.9); bt.add(kn);
+    const capeG = new THREE.CylinderGeometry(1.42, 2.15, 2.75, 48, 4, true, Math.PI * 0.62, Math.PI * 0.76);
+    const capeO = new THREE.Mesh(capeG, M(0xd8222a, { roughness: .4, side: THREE.FrontSide })), capeI = new THREE.Mesh(capeG, M(0x111216, { roughness: .6, side: THREE.BackSide }));
+    [capeO, capeI].forEach(m => { m.position.set(0, 1.55, -0.12); m.scale.set(1.05, 1, 1); g.add(m); });
+    // 팔: 왼쪽(보는 사람 기준) 들어 OK · 오른쪽 옆으로 내림
+    ell(0.36, 0.36, 0.36, -1.45, 2.4, 0.2, blu); ell(0.36, 0.36, 0.36, 1.45, 2.4, 0.0, blu);
+    const s1 = [-1.45, 2.4, 0.2], e1 = [-2.3, 2.6, 0.45], w1 = [-2.72, 3.25, 0.6];
+    limb(s1, e1, 0.3, wht); limb(e1, w1, 0.28, wht); cuff(e1, w1, 0.34);
+    glove([-2.9, 3.78, 0.66], [0, 0, 0.12], 0.95, 'ok', 1);
+    const s2 = [1.45, 2.4, 0.0], e2 = [2.4, 1.9, -0.05], w2 = [3.15, 1.35, -0.1];
+    limb(s2, e2, 0.3, wht); limb(e2, w2, 0.28, wht); cuff(e2, w2, 0.34);
+    glove([3.38, 1.02, -0.1], [0, -Math.PI / 2, 2.4], 0.95, 'open', -1);
   }
   g.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(g);
-  g.scale.setScalar(H / (bb.max.y - bb.min.y));                                                            // 맨 위(귀 끝 · 하트 · 손)까지 H
+  g.scale.setScalar(H / (bb.max.y - bb.min.y));                                                            // 맨 위(귀 끝 · 리본)까지 H
   return g;
 }
-// 1 GATE 1 밖 = 5 m 머리하트 · 2 가운데 = 3 m · 3 GATE 4(북문) 쪽 = 5 m 하트 (10. 28. 제욱님)
-const COAI = [coai('headHeart', 99, 28, Math.PI / 2, 5), coai('stand', 18, 26, Math.PI, 3), coai('heart', -64.6, 25.8, Math.PI / 2, 5)];
-ZONE = 0.035; const FLY = coai('stand', 0, CZ, 0, 2.9, 5.6); FLY.rotation.x = 0.25; ZONE = 1;               // 전시장 구 LED 위 (휴게공간 시안, 비행 조형물 시안은 아님)
-// 휴게존 (1027 배치도 x −67.6 ~ −57.5 · z 21.1 ~ 29.5, 원탁 6개)
-for (const [x, z] of [[-66.6, 23.2], [-63.5, 21.9], [-61.8, 23.7], [-59.6, 25.4], [-58.8, 28.0], [-61.9, 28.4]]) { const t = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.05, 20), M(0xf2f4f8)); t.position.set(x, 0.72, z); scene.add(t); box(0.06, 0.7, 0.06, M(0x111111), x, z, 0); [[0.7, 0], [-0.7, 0]].forEach(([a]) => box(.42, .8, .42, M(0x1b2a86), x + a, z, 0)); }
+// 승인서 배치도(선수단 라운지1 LAYOUT): 1 GATE 1 밖 · 2 로비 가운데 기둥(24.1, 20.3) 서쪽 · 3 서쪽 끝 휴게공간 (10. 29.)
+// 높이는 승인서에 없음 → 10. 28. 제욱님 값(앉음 5 m · 서 있음 3 m) 그대로
+// 그림판 코아이 (10. 29. 제나 4면 그림): 보는 방향에 맞는 면(앞 · 3/4 · 옆 · 뒤)을 골라 카메라 쪽으로 세움. 위 coai()는 예전 도형판(안 씀)
+// 3/4는 캐릭터 오른쪽에서 본 그림만 있음(뒤집으면 COSS 글자가 거꾸로) → 왼쪽 앞은 정면 그림. 옆 그림: 앉음 = 왼쪽 옆, 서 있음 = 오른쪽 옆
+const COAI_TEX = {}; ['cover', 'stand'].forEach(k => ['front', 'q34', 'side', 'back'].forEach(v => COAI_TEX[k + v] = tex(`img/coai/${k}_${v}.png`)));
+const coaiBlob = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 4, 64, 64, 64); gr.addColorStop(0, 'rgba(0,0,0,.45)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = gr; x.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
+const CARDS = [];
+function coaiCard(kind, x, z, ry = 0, H = 5, y = 0) {
+  const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; scene.add(g);
+  const mat = new THREE.MeshBasicMaterial({ map: COAI_TEX[kind + 'front'], alphaTest: 0.45, side: THREE.DoubleSide, toneMapped: false, color: new THREE.Color().setScalar(ZONE < 1 ? 0.55 : 0.97) });
+  const card = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0), mat); card.rotation.order = 'YXZ'; g.add(card);
+  if (y === 0) { const sh = new THREE.Mesh(new THREE.CircleGeometry(H * 0.36, 40), new THREE.MeshBasicMaterial({ map: coaiBlob, transparent: true, depthWrite: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.03; sh.scale.y = 0.8; g.add(sh); }
+  CARDS.push({ g, card, kind, H }); return g;
+}
+const _cp = new THREE.Vector3(), _gp = new THREE.Vector3();
+function coaiTurn() {
+  camera.getWorldPosition(_cp);
+  CARDS.forEach(({ g, card, kind, H }) => {
+    g.getWorldPosition(_gp);
+    const th = THREE.MathUtils.euclideanModulo(Math.atan2(_cp.x - _gp.x, _cp.z - _gp.z) - g.rotation.y + Math.PI, Math.PI * 2) - Math.PI, d = th * 180 / Math.PI;   // 0 = 정면, + = 캐릭터 왼쪽
+    let v = 'front', flip = false;
+    if (Math.abs(d) > 135) v = 'back';
+    else if (d < -67.5) { v = 'side'; flip = kind === 'cover'; }
+    else if (d < -22.5) v = 'q34';
+    else if (d > 67.5) { v = 'side'; flip = kind === 'stand'; }
+    const t = COAI_TEX[kind + v]; if (card.material.map !== t) card.material.map = t;
+    const im = t.image, asp = im && im.width ? im.width / im.height : 0.85;
+    card.scale.set((flip ? -1 : 1) * H * asp, H, 1);
+    const el = Math.atan2(_cp.y - (_gp.y + H / 2), Math.hypot(_cp.x - _gp.x, _cp.z - _gp.z));   // 위에서 내려다보면 뒤로 살짝 눕힘
+    card.rotation.set(-Math.min(1, Math.max(0, el - 0.2) * 0.8), th, 0);
+  });
+}
+const COAI = [coaiCard('cover', 98.6, 28.8, Math.PI / 2, 5), coaiCard('stand', 22.2, 21.0, Math.PI, 3), coaiCard('cover', -65.9, 25.7, Math.PI / 2, 5)];
+ZONE = 0.035; const FLY = coaiCard('stand', 0, CZ, 0, 2.9, 5.6); ZONE = 1;               // 전시장 구 LED 위 (휴게공간 시안, 비행 조형물 시안은 아님)
+// 공기인형3 + 휴게공간 10,000 × 8,500 (승인서 평면도 · 전기·집기도면): 회색 카펫 · 디자인유리세트 SET 04 × 6 (유리 원탁 FT-03 + 의자 FC-03A 4개 X자)
+(function restArea() {
+  const X0 = -67.6, Z0 = 21.1, W = 10, D = 8.5;
+  const cp = new THREE.Mesh(new THREE.PlaneGeometry(W, D), M(0x3b3e44, { roughness: .95 })); cp.rotation.x = -Math.PI / 2; cp.position.set(X0 + W / 2, 0.025, Z0 + D / 2); scene.add(cp);
+  const glassT = new THREE.MeshStandardMaterial({ color: 0xcfeff4, transparent: true, opacity: .45, roughness: .05, metalness: .1 }), chrome = M(0xd5d9de, { metalness: .9, roughness: .2 }), blk = M(0x15161a, { roughness: .4 });
+  const px = (u, v) => [X0 + (u - 88) / 82.7, Z0 + (v - 137) / 82.5];   // 승인서 7쪽 평면 픽셀 → 모형 좌표
+  [[308, 205], [176, 305], [535, 347], [725, 470], [481, 693], [803, 693]].forEach(([u, v]) => {
+    const [x, z] = px(u, v), t = new THREE.Group(); t.position.set(x, 0, z); scene.add(t);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.02, 32), glassT); top.position.y = 0.72; t.add(top);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 10), chrome); pole.position.y = 0.36; t.add(pole);
+    [0, 1, 2, 3].forEach(i => { const a = Math.PI / 4 + i * Math.PI / 2, c = new THREE.Group(); c.position.set(Math.cos(a) * 0.62, 0, Math.sin(a) * 0.62); c.rotation.y = Math.atan2(-Math.cos(a), -Math.sin(a)); t.add(c);
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.4), blk); seat.position.y = 0.45; c.add(seat);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.42, 0.03), blk); back.position.set(0, 0.7, -0.2); back.rotation.x = -0.12; c.add(back);
+      [[-.18, -.17], [.18, -.17], [-.18, .17], [.18, .17]].forEach(([a2, b2]) => { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.45, 6), chrome); l.position.set(a2, 0.225, b2); c.add(l); }); });
+  });
+})();
 // 지자체 부스 (1027 배치도 「광주시 지자체부스」 6 × 3 m, 꾸밈은 미확인)
 (function () { const g = new THREE.Group(); g.position.set(-17.8, 0, 9.2); scene.add(g); box(6, 0.1, 3, M(0xe8ecf3), 0, 0, 0, g); box(6, 3, 0.15, M(0xffffff), 0, -1.5, 0.1, g); const s = sign(['지자체 부스'], 4, 0.7, { bg: '#0b1440', size: 120 }); s.position.set(0, 2.6, -1.4); g.add(s); box(2.2, .9, .7, M(0xffffff), 0, 1.0, 0.1, g); })();
 
@@ -1122,9 +1208,9 @@ const HOT = [
  { n: '8', c: 'y', t: '전시장 내부 트러스 배너', z: '전시장 · 가운데 줄', p: [-25.75, 10, CZ], more: [[25.75, 10, CZ]], st: [-38, CZ], desc: '1.2 × 3 m 20개 · 6 m 간격', img: [['n_env_12', '트러스 배너 20개']], src: '00.환경장식물 제작승인서_1022' },
  { n: '●', c: 'c', t: '바닥 동선', z: '전시장 · 마름모 통로', p: [-40, 2.4, -32.7], st: [-30, CZ], desc: '바닥 이정표 파이텍스 64 × 1 m 4줄(분야 5줄 · 부스 원 + 화살표) · 꼭짓점 파이텍스 2 × 2 m 4개(A ~ D)', img: [['n_floor28_persp', '투시도 (10. 28.)'], ['n_floor28_layout', '바닥 이정표 배치 (10. 28.)'], ['n_floor28_strip', '띠 그래픽 ① ~ ④'], ['n_floor28_sign', '꼭짓점 이정표 A ~ D']], src: '06.내부 휴게공간_내부 바닥동선 제작승인서_1028' },
  { n: '●', c: 'c', t: '컨소시엄 부스 18개', z: '전시장 A · B · C홀', p: [36, 5.5, -45], st: [36, CZ], desc: '18개 컨소시엄 부스 자리 · 크기 (실측 도면, 부스마다 약 350 ㎡). 18곳 모두 부스 시안(1027) 보고 3D로 지음 (인공지능 · 첨단소재나노융합은 시안 없어 개략)', img: [['n_floor_02', '부스 순서 · 바닥 이정표']], src: '부스 순서: 바닥동선_1022 · 크기: 0915-1 사이즈실측' },
- { n: '●', c: 'c', t: '5 m 머리하트 코아이', z: '로비 · GATE 1 밖', p: [99, 5.8, 28], st: [107, 22], desc: '높이 5 m · 두 손 볼 · 머리 위 분홍 하트 (모양 = 실물 사진 10. 28., 자리 = 공간조성계획 10. 15.)', img: [['p_coai1', '실물 사진 (5 m 머리하트)'], ['p_facade1', 'GATE 1 쪽 외관']], src: '2026 CO-SHOW 공간조성계획_1015' },
- { n: '●', c: 'c', t: '3 m 코아이', z: '로비 · A → B홀 사이', p: [18, 3.6, 26], st: [18, 18], desc: '높이 3 m · 서서 손 흔듦 (모양 = 실물 사진 10. 28., 자리 = 공간조성계획 10. 15.)', img: [['p_coai2', '실물 사진 (3 m)']], src: '2026 CO-SHOW 공간조성계획_1015' },
- { n: '●', c: 'c', t: '5 m 하트 코아이 + 휴게존', z: '로비 · GATE 4(북문) 쪽', p: [-64.6, 5.8, 25.8], st: [-56, 19.5], desc: '높이 5 m · 빨간 하트 안음 (모양 = 실물 사진 10. 28.). 1027 배치도 휴게공간(원 Φ3 m · 원탁 6개) 자리', img: [['p_coai3', '실물 사진 (5 m 하트)'], ['n_lounge_02', '1027 배치도']], src: '공간조성계획_1015 · 선수단라운지 승인서 배치도' },
+ { n: '●', c: 'c', t: '코아이 공기인형 1', z: '로비 밖 · GATE 1 앞 광장', p: [98.6, 5.8, 28.8], st: [107, 22], desc: '앉아서 두 손으로 얼굴 가림 · 분홍 리본 · 콘센트 220V 1구 (높이 5 m는 10. 28. 기준, 승인서에 높이 없음)', img: [['n_coai_01', '승인서 투시도 (공기인형 1)'], ['n_coai_lay', '승인서 배치도 (3EA)']], src: '08.로비 코아이 공기인형 제작승인서_1023' },
+ { n: '●', c: 'c', t: '코아이 공기인형 2', z: '로비 · 에스컬레이터 앞 기둥 옆', p: [22.2, 3.6, 21.0], st: [22.2, 13.5], desc: '서서 한 손 OK · 빨간 목도리 + 망토 · 콘센트 220V 1구 (높이 3 m는 10. 28. 기준)', img: [['n_coai_02', '승인서 투시도 (공기인형 2)'], ['n_coai_lay', '승인서 배치도 (3EA)']], src: '08.로비 코아이 공기인형 제작승인서_1023' },
+ { n: '●', c: 'c', t: '코아이 공기인형 3 + 휴게공간', z: '로비 · 서쪽 끝 (GATE 4 쪽)', p: [-65.9, 5.8, 25.7], st: [-56, 19.5], desc: '10 × 8.5 m 회색 카펫 · 디자인유리세트 SET 04 6세트 · 공기인형 3(공기인형 1과 같은 모양) · 콘센트 220V 1구', img: [['n_coai_03', '승인서 투시도 (공기인형 3 + 휴게공간)'], ['n_coai_plan', '승인서 전기 · 집기도면'], ['n_coai_lay', '승인서 배치도 (3EA)']], src: '08.로비 코아이 공기인형 제작승인서_1023' },
  { n: '●', c: 'c', t: '지자체 부스', z: '로비 · B → C홀 사이', p: [-17.8, 4.4, 9.2], st: [-17.8, 16], desc: '1027 배치도 「광주시 지자체부스」 6 × 3 m 자리 · 꾸밈 시안은 없음', img: [['n_expogate_02', '1027 배치도']], src: '1027 배치도 · 공간조성계획_1015' },
  { n: '●', c: 'c', t: '다목적홀1 무대', z: '다목적홀1 · 개막식장', p: [-56, 9, 57], st: [-40, 57], desc: '레이허 타워와 메인 LED 무대 · 객석 (이전 시안 기준)', img: [['r06_3', '무대 시안'], ['r06_4', '객석 시안'], ['r15_hallbird', '다목적홀 조감']], src: '99.전시장시안 / 전체 수정' },
  { n: '●', c: 'c', t: '다목적홀1 라운지', z: '다목적홀1 · 객석 뒤', p: [-28, 4, 50], st: [-26, 62], desc: '객석 뒤 라운지 · 입구 아치 · LED 벽 (이전 시안 기준)', img: [['r06_1', '라운지 · 아치 시안 1'], ['r06_2', '라운지 · 아치 시안 2'], ['r06_5', '객석 뒤 LED 벽'], ['r06_6', '라운지 테이블']], src: '99.전시장시안 / 전체 수정' },
@@ -1408,7 +1494,7 @@ renderer.setAnimationLoop((now) => {
   PIX.forEach((t, i) => t.offset.y = (kinT * 0.01 * (i % 3 + 1)) % 1);
   SPH.rotation.y += dt * 0.4;
   COAI.forEach((c, i) => c.rotation.z = Math.sin(now / 900 + i) * 0.03);
-  FLY.position.y = 5.6 + Math.sin(now / 1100) * 0.25; FLY.rotation.y += dt * 0.15;
+  FLY.position.y = 5.6 + Math.sin(now / 1100) * 0.25; FLY.rotation.y += dt * 0.15; coaiTurn();
   if (mode === 'walk') sprites.forEach(s => s.visible = Math.hypot(s.position.x - player.x, s.position.z - player.z) < 32); else sprites.forEach(s => s.visible = !s.userData.extra);   // 조감에선 같은 번호는 한 번만
   drawMini();
   if (composer && !renderer.xr.isPresenting) composer.render(); else renderer.render(scene, camera);
