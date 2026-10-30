@@ -517,7 +517,7 @@ const DETAIL = {
 // 부스 3D 나눠 짓기: site/booths/<키>.js 가 export default (api) => ({ '부스이름'(g, W, D, carpet, slope) {…} })
 const BOOTH_MODS = ['semi', 'bio', 'battery', 'bigdata', 'car', 'comm', 'display', 'drone', 'ecoup', 'energy', 'greenbio', 'iot', 'media', 'security', 'sobu', 'ai', 'nano'];
 { const api = { THREE, M, E, B, IMG, GLOW, box, boxXZ, floorPlane, panel, canvasTex, textTex, sign, atlas, beam, pool, truss, pixWall, pixBlock, tex, B3, boothKit, figure, CHAIR, BEAN, FONT, LOW, TILE_COL, mergeGeometries };
-  const rs = await Promise.allSettled(BOOTH_MODS.map(k => import(`./booths/${k}.js?v=21`).catch(() => import(`./booths/${k}.js?v=21&r=1`))));   // 한 번 못 받으면 다시
+  const rs = await Promise.allSettled(BOOTH_MODS.map(k => import(`./booths/${k}.js?v=22`).catch(() => import(`./booths/${k}.js?v=22&r=1`))));   // 한 번 못 받으면 다시
   rs.forEach((r, i) => { if (r.status === 'fulfilled') { try { Object.assign(DETAIL, r.value.default(api)); } catch (e) { console.warn('부스', BOOTH_MODS[i], e); } } }); }
 TOP.forEach((b, i) => addBooth(b, 'T', i));
 BOT.forEach((b, i) => addBooth(b, 'B', i + 1));
@@ -1352,7 +1352,7 @@ const HOT = [
  { n: '7', c: 'y', t: '로비 기둥 현수막', z: '로비 · 기둥 9개', p: [12.1, 8.4, colZ(12.1)], more: [[-35.9, 8.4, colZ(-35.9)], [48.1, 8.4, colZ(48.1)]], st: [12.1, 27], desc: '2.5 × 4.5 m 9개 · 10. 28. 기둥 싸바리 시안 목업 (한 바퀴 네 면)', img: [['n_env_11', '로비 기둥 현수막'], ['n_env_02', '배치도']], src: '00.환경장식물 제작승인서_1022' },
  { n: '8', c: 'y', t: '전시장 내부 트러스 배너', z: '전시장 · 가운데 줄', p: [-25.75, 10, CZ], more: [[25.75, 10, CZ]], st: [-38, CZ], desc: '1.2 × 3 m 20개 · 6 m 간격', img: [['n_env_12', '트러스 배너 20개']], src: '00.환경장식물 제작승인서_1022' },
  { n: '●', c: 'c', t: '바닥 동선', z: '전시장 · 마름모 통로', p: [-40, 2.4, -32.7], st: [-30, CZ], desc: '바닥 이정표 파이텍스 64 × 1 m 4줄(분야 5줄 · 부스 원 + 화살표) · 꼭짓점 파이텍스 2 × 2 m 4개(A ~ D)', img: [['n_floor28_persp', '투시도 (10. 28.)'], ['n_floor28_layout', '바닥 이정표 배치 (10. 28.)'], ['n_floor28_strip', '띠 그래픽 ① ~ ④'], ['n_floor28_sign', '꼭짓점 이정표 A ~ D']], src: '06.내부 휴게공간_내부 바닥동선 제작승인서_1028' },
- { n: '●', c: 'c', t: '컨소시엄 부스 18개', z: '전시장 A · B · C홀', p: [36, 5.5, -45], st: [36, CZ], desc: '18개 컨소시엄 부스 자리 · 크기 (실측 도면, 부스마다 약 350 ㎡). 18곳 모두 부스 시안(1027) 보고 3D로 지음 (첨단소재나노융합은 시안 없어 개략 · 인공지능은 10. 30. 플로우 3D 제안시안으로 다시 지음)', img: [['n_floor_02', '부스 순서 · 바닥 이정표']], src: '부스 순서: 바닥동선_1022 · 크기: 0915-1 사이즈실측' },
+ { n: '●', c: 'c', t: '컨소시엄 부스 18개', z: '전시장 A · B · C홀', p: [36, 5.5, -45], st: [36, CZ], desc: '18개 컨소시엄 부스 자리 · 크기 (실측 도면, 부스마다 약 350 ㎡). 18곳 모두 부스 시안(1027) 보고 3D로 지음 (인공지능 · 첨단소재나노융합은 10. 30. 새 시안으로 다시 지음)', img: [['n_floor_02', '부스 순서 · 바닥 이정표']], src: '부스 순서: 바닥동선_1022 · 크기: 0915-1 사이즈실측' },
  { n: '●', c: 'c', t: '코아이 공기인형 1', z: '로비 밖 · GATE 1 앞 광장', p: [98.6, 5.8, 28.8], st: [107, 22], desc: '앉아서 두 손으로 얼굴 가림 · 분홍 리본 · 콘센트 220V 1구 (높이 5 m는 10. 28. 기준, 승인서에 높이 없음)', img: [['n_coai_01', '승인서 투시도 (공기인형 1)'], ['n_coai_lay', '승인서 배치도 (3EA)']], src: '08.로비 코아이 공기인형 제작승인서_1023' },
  { n: '●', c: 'c', t: '코아이 공기인형 2', z: '로비 · 에스컬레이터 앞 기둥 옆', p: [22.2, 3.6, 21.0], st: [22.2, 13.5], desc: '서서 한 손 OK · 빨간 목도리 + 망토 · 콘센트 220V 1구 (높이 3 m는 10. 28. 기준)', img: [['n_coai_02', '승인서 투시도 (공기인형 2)'], ['n_coai_lay', '승인서 배치도 (3EA)']], src: '08.로비 코아이 공기인형 제작승인서_1023' },
  { n: '●', c: 'c', t: '코아이 공기인형 3 + 휴게공간', z: '로비 · 서쪽 끝 (GATE 4 쪽)', p: [-65.9, 5.8, 25.7], st: [-56, 19.5], desc: '10 × 8.5 m 회색 카펫 · 디자인유리세트 SET 04 6세트 · 공기인형 3(공기인형 1과 같은 모양) · 콘센트 220V 1구', img: [['n_coai_03', '승인서 투시도 (공기인형 3 + 휴게공간)'], ['n_coai_plan', '승인서 전기 · 집기도면'], ['n_coai_lay', '승인서 배치도 (3EA)']], src: '08.로비 코아이 공기인형 제작승인서_1023' },
