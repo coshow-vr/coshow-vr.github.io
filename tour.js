@@ -1188,9 +1188,14 @@ floorPlane(MH.x0, MH.x1, MH.z0, MH.z1, M(0x2a3045, { side: THREE.DoubleSide }), 
 boxXZ(MH.mid - .25, MH.mid + .25, MH.z0 + .5, MH.z1 - .5, 11, M(0xf1eee8));            // 다목적홀1 | 2 사이 이동벽 (닫힘, 실측 도면 점선)
 // 레이어 타워 (2,070 각, 격자 트러스 그림)
 const towerMat = (() => { const C = {}; return h => { if (C[h]) return C[h];
-  const t = canvasTex(256, 256, (g, w) => { g.clearRect(0, 0, w, w); g.strokeStyle = '#c9cfd9'; g.lineWidth = 10; g.strokeRect(5, 5, w - 10, w - 10); g.lineWidth = 5; g.beginPath(); g.moveTo(8, 8); g.lineTo(w - 8, w - 8); g.moveTo(w - 8, 8); g.lineTo(8, w - 8); g.stroke(); g.beginPath(); g.moveTo(0, w / 2); g.lineTo(w, w / 2); g.stroke(); });
+  // 검은 팔레트 큐브 쌓기 (11. 1., 스케치업 1025 미리보기 · 한 칸 2.07 / 4 ≈ 0.52 m는 (안))
+  const t = canvasTex(256, 256, (g, w) => { const c = w / 4; g.fillStyle = '#08090c'; g.fillRect(0, 0, w, w);
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { const x = i * c, y = j * c, v = 22 + ((i * 7 + j * 5) % 4) * 3;
+      g.fillStyle = `rgb(${v},${v},${v + 4})`; g.fillRect(x + 3, y + 3, c - 6, c - 6);
+      g.strokeStyle = '#6a7080'; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 4, y + c - 4); g.lineTo(x + 4, y + 4); g.lineTo(x + c - 4, y + 4); g.stroke();
+      g.strokeStyle = '#000'; g.beginPath(); g.moveTo(x + c - 4, y + 4); g.lineTo(x + c - 4, y + c - 4); g.lineTo(x + 4, y + c - 4); g.stroke(); } });
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, h / 2.07);
-  return (C[h] = M(0xffffff, { map: t, alphaTest: 0.35, side: THREE.DoubleSide, metalness: .8, roughness: .3, emissive: 0x161b28 })); }; })();
+  return (C[h] = M(0xffffff, { map: t, metalness: .15, roughness: .6, emissive: 0x9aa0b4, emissiveMap: t, emissiveIntensity: .6 })); }; })();
 const TOWERS = [];
 const towerRun = (x, z, dx, dz, hs) => hs.forEach((h, i) => { const cx = x + dx * 2.07 * (i + 0.5), cz = z + dz * 2.07 * (i + 0.5); box(2.07, h, 2.07, towerMat(h), cx, cz, 0); TOWERS.push([cx, cz, h]); });
 towerRun(-63.1, 47.0, 0, 1, [6, 6, 6, 6, 6, 6, 6, 6, 6]);       // 무대 뒤 9개 (A 입면 6 m)
