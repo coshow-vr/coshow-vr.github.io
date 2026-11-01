@@ -1188,9 +1188,9 @@ floorPlane(MH.x0, MH.x1, MH.z0, MH.z1, M(0x2a3045, { side: THREE.DoubleSide }), 
 boxXZ(MH.mid - .25, MH.mid + .25, MH.z0 + .5, MH.z1 - .5, 11, M(0xf1eee8));            // 다목적홀1 | 2 사이 이동벽 (닫힘, 실측 도면 점선)
 // 레이어 타워 (2,070 각, 격자 트러스 그림)
 const towerMat = (() => { const C = {}; return h => { if (C[h]) return C[h];
-  // 검은 팔레트 큐브 쌓기 (11. 1., 스케치업 1025 미리보기 · 한 칸 2.07 / 4 ≈ 0.52 m는 (안))
-  const t = canvasTex(256, 256, (g, w) => { const c = w / 4; g.fillStyle = '#08090c'; g.fillRect(0, 0, w, w);
-    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { const x = i * c, y = j * c, v = 22 + ((i * 7 + j * 5) % 4) * 3;
+  // 검은 팔레트 큐브 쌓기 (11. 1., 스케치업 1025 미리보기 · 팔레트 1장 1 m = 제욱님 → 2.07 각 한 면 2칸, 칸 1.035 m)
+  const t = canvasTex(256, 256, (g, w) => { const c = w / 2; g.fillStyle = '#08090c'; g.fillRect(0, 0, w, w);
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { const x = i * c, y = j * c, v = 22 + ((i * 7 + j * 5) % 4) * 3;
       g.fillStyle = `rgb(${v},${v},${v + 4})`; g.fillRect(x + 3, y + 3, c - 6, c - 6);
       g.strokeStyle = '#6a7080'; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 4, y + c - 4); g.lineTo(x + 4, y + 4); g.lineTo(x + c - 4, y + 4); g.stroke();
       g.strokeStyle = '#000'; g.beginPath(); g.moveTo(x + c - 4, y + 4); g.lineTo(x + c - 4, y + c - 4); g.lineTo(x + 4, y + c - 4); g.stroke(); } });
