@@ -19,6 +19,7 @@ const app = document.getElementById('app');
 // 화질: 주소 ?q=high|low 또는 [화질] 단추(기기에 기억). 처음엔 폰·태블릿 = 저화질, PC = 고화질
 const QS = new URLSearchParams(location.search).get('q'), QSAVE = (() => { try { return localStorage.getItem('cvr_q'); } catch (e) { return null; } })();
 const Q = QS || QSAVE || 'low';   // 기본은 저화질 (고화질은 단추로 고르면 기억)
+const CAPQ = +new URLSearchParams(location.search).get('cap');
 const LOW = Q === 'low';                                                        // 저화질 = 빛 번짐 · 스포트라이트 끄고 해상도 낮춤
 const renderer = new THREE.WebGLRenderer({ antialias: !LOW, powerPreference: 'high-performance' });
 renderer.setPixelRatio(LOW ? Math.min(devicePixelRatio, 1) : Math.min(devicePixelRatio * 1.25, 2.5));   // 고화질 = 화면보다 조금 더 촘촘히 그림
@@ -74,8 +75,10 @@ function floorPlane(x0, x1, z0, z1, mat, y = 0.01, parent = scene) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, z1 - z0), mat); m.rotation.x = -Math.PI / 2;
   m.position.set((x0 + x1) / 2, y, (z0 + z1) / 2); parent.add(m); return m;
 }
+const TEX_CAP = CAPQ || (LOW && matchMedia('(pointer:coarse)').matches ? 1024 : 0);   // 폰 저화질: 그림판 긴 변 1024까지
 function canvasTex(w, h, draw) {
-  const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); draw(g, w, h);
+  const big = Math.max(w, h), sc = TEX_CAP && draw.length && big > TEX_CAP ? TEX_CAP / big : 1;
+  const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * sc)); c.height = Math.max(1, Math.round(h * sc)); const g = c.getContext('2d'); if (sc !== 1) g.scale(c.width / w, c.height / h); draw(g, w, h);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.userData.canvas = c; return t;
 }
 function fitText(g, lines, w, h, size, color = '#fff', weight = 700) {
@@ -767,13 +770,14 @@ expoGate(GC.C, 'C', tex('tex/g_c_l.jpg'), tex('tex/g_c_r.jpg'), 1);
 // 폭 17,000 · 휘어짐 5,150 · 높이 5,000(보 1,200) · 키네틱 LED 5,796 × 2,415 · 깃발 730 × 1,650 × 18
 const kinTex = canvasTex(1160, 484, () => {});
 const KX = 16, KY = 6, KIN = [], kinW = (i, j, t) => i * 0.5 + j * 0.35 - t * 1.8;   // 키네틱 판 (가로 16 · 세로 6, 유나 판단)
-const badgeImg = new Image(); badgeImg.src = 'badge.png';
+const badgeImg = new Image(); badgeImg.src = 'badge.png'; let kinLayer = null; document.fonts.addEventListener('loadingdone', () => { kinLayer = null; });
 function drawKinetic(t) {
   // 시안(메인게이트 투시도): 남보라 바탕 · 왼쪽 행사 글자 · 오른쪽 CO SHOW 방패 · 떠 있는 아이콘 · 아래 주최 표시, 위에 키네틱 판 움직임
   const c = kinTex.userData.canvas, g = c.getContext('2d'), w = c.width, h = c.height;
   const bg = g.createRadialGradient(w * .62, h * .45, 20, w * .5, h * .5, w * .7); bg.addColorStop(0, '#4a52d8'); bg.addColorStop(.45, '#232a8e'); bg.addColorStop(1, '#0a0c38'); g.fillStyle = bg; g.fillRect(0, 0, w, h);
   g.strokeStyle = 'rgba(120,200,255,.18)'; g.lineWidth = 2; for (let i = 0; i < 9; i++) { g.beginPath(); g.moveTo(w * .55, h * .5); g.lineTo(w * .55 + Math.cos(i * .7 + t * .1) * w, h * .5 + Math.sin(i * .7 + t * .1) * w); g.stroke(); }
   for (let i = 0; i < 14; i++) { const x = (w * (0.42 + 0.55 * ((i * 0.618) % 1)) + Math.sin(t * .6 + i) * 12) % w, y = h * (0.1 + 0.75 * ((i * 0.37) % 1)) + Math.cos(t * .5 + i) * 8, s = 26 + (i % 3) * 8; g.strokeStyle = 'rgba(140,230,255,.75)'; g.lineWidth = 3; g.beginPath(); g.roundRect(x - s / 2, y - s / 2, s, s, 6); g.stroke(); }
+  const kinStatic = (g) => {
   if (badgeImg.complete && badgeImg.naturalWidth) { g.save(); g.shadowColor = '#5fe0ff'; g.shadowBlur = 40; const bw = h * 0.7, bh = bw * badgeImg.naturalHeight / badgeImg.naturalWidth; g.drawImage(badgeImg, w * .69 - bw / 2, h * .46 - bh / 2, bw, bh); g.restore(); }
   g.textAlign = 'center'; g.textBaseline = 'middle'; const lx = w * .27;
   g.fillStyle = '#fff'; g.font = `700 30px ${FONT}`; g.fillText('첨단교육, SHOW로 펼쳐지다!', lx, h * .2);
@@ -781,6 +785,8 @@ function drawKinetic(t) {
   g.save(); g.font = `900 italic 92px ${FONT}`; g.lineWidth = 10; g.strokeStyle = '#2b3fd0'; g.strokeText('CO-SHOW', lx, h * .52); g.fillStyle = '#fff'; g.fillText('CO-SHOW', lx, h * .52); g.restore();
   g.fillStyle = '#fff'; g.font = `700 30px ${FONT}`; g.fillText('2026. 11. 18.(수) ~ 11. 21.(토)', lx, h * .68); g.font = `600 26px ${FONT}`; g.fillText('김대중컨벤션센터', lx, h * .77);
   g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `600 20px ${FONT}`; g.fillText('교육부   ·   한국연구재단   ·   첨단분야 혁신융합대학 사업단 협의회', w * .5, h * .93);
+  };
+  if (kinLayer) g.drawImage(kinLayer, 0, 0); else { kinStatic(g); if (badgeImg.complete && badgeImg.naturalWidth && document.fonts.status === 'loaded') { kinLayer = document.createElement('canvas'); kinLayer.width = w; kinLayer.height = h; kinStatic(kinLayer.getContext('2d')); } }
   const cw = w / KX, ch = h / KY;                                              // 판 밝기 = 판이 앞으로 나올수록 밝게
   for (let i = 0; i < KX; i++) for (let j = 0; j < KY; j++) { const v = Math.sin(kinW(i, KY - 1 - j, t)); g.fillStyle = v > 0 ? `rgba(255,255,255,${v * 0.14})` : `rgba(0,0,20,${-v * 0.3})`; g.fillRect(i * cw, j * ch, cw, ch); }
   kinTex.needsUpdate = true;
@@ -1458,8 +1464,11 @@ function tap(cx, cy) {
   if (mode === 'walk' && fl.length) { const p = fl[0].point; if (walkable(p.x, p.z) && fl[0].distance < 60) { const d = Math.hypot(p.x - player.x, p.z - player.z); return goWalk(p.x, p.z, null, Math.min(2.2, 0.4 + d / 12)); } }
   if (bp.length && mode === 'bird') openBooth(bp[0].object.userData);
 }
+const boxed = () => document.documentElement.classList.contains('boxed');     // 홈페이지 칸 안(전체 화면 아님): 휠은 페이지 스크롤에 양보
+const syncBox = () => { controls.enableZoom = !boxed(); }; syncBox(); addEventListener('resize', syncBox);
+if (window.CVR_EMB) addEventListener('keydown', e => { if (e.target.tagName !== 'SELECT' && /^(Arrow|Space|PageUp|PageDown)/.test(e.code)) e.preventDefault(); });   // 칸 안에서 방향키로 바깥 페이지가 움직이지 않게
 renderer.domElement.addEventListener('wheel', e => {                       // 걷기: 휠로 앞뒤 이동
-  if (mode !== 'walk' || tw.on) return; e.preventDefault(); stopTour(); hideHint();
+  if (mode !== 'walk' || tw.on || boxed()) return; e.preventDefault(); stopTour(); hideHint();
   const st = Math.max(-3, Math.min(3, -e.deltaY / 45)), sy = Math.sin(player.yaw), cy = Math.cos(player.yaw), nx = player.x - sy * st, nz = player.z - cy * st;
   if (walkable(nx, nz)) { player.x = nx; player.z = nz; applyWalkCam(); }
 }, { passive: false });
@@ -1625,7 +1634,84 @@ if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(ok => {
 const hint = document.getElementById('hint'); let hintGone = false;
 function hideHint() { if (hintGone) return; hintGone = true; hint.style.opacity = 0; setTimeout(() => hint.remove(), 700); }
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (composer) composer.setSize(innerWidth, innerHeight); });
-let last = performance.now(), kinT = 0;
+// ── 성능 최적화 (11. 3.): 모양은 그대로 두고 같은 재질을 묶어 그리는 횟수를 줄임. 주소 ?opt=0이면 끔 ──
+const OPT = new URLSearchParams(location.search).get('opt') !== '0';
+const CULL = [], TEXQ = [], ZL = [], _cq0 = new THREE.Vector3();
+const zoneOf = (x, z) => z < 3.5 ? 0 : (z > 34 && x < 13 ? 2 : 1);             // 0 전시장 · 1 로비 · 2 다목적홀
+if (OPT) (() => {
+  scene.updateMatrixWorld(true);
+  const hold = new Set(), H = o => o && o.traverse(c => hold.add(c));            // 움직이거나 따로 켜고 끄는 것은 묶지 않음
+  KIN.forEach(H); HEADS.forEach(h => H(h.g)); H(SPH); CARDS.forEach(c => H(c.g)); H(rig); HALLFX.forEach(H);
+  const hallK = new Map(HALLM.map(([m, k]) => [m, k])), hallB = new Set(HALLB), pixS = new Set(PIX), defOBC = THREE.Material.prototype.onBeforeCompile;
+  const texK = t => { if (!t) return ''; const s = t.source; return s && s.data && !pixS.has(t) ? [s.uuid, t.repeat.x, t.repeat.y, t.offset.x, t.offset.y, t.rotation, t.wrapS, t.wrapT].join() : t.uuid; };
+  const col = c => c ? [c.r, c.g, c.b].join() : '';
+  const matK = m => [m.type, col(m.color), col(m.emissive), m.emissiveIntensity, m.roughness, m.metalness, texK(m.map), texK(m.emissiveMap), texK(m.normalMap), texK(m.roughnessMap), texK(m.metalnessMap), texK(m.alphaMap), m.envMap ? m.envMap.uuid : '', m.envMapIntensity, m.side, m.alphaTest, m.toneMapped, m.depthWrite, m.depthTest, m.polygonOffset, m.polygonOffsetFactor, m.polygonOffsetUnits, m.flatShading, m.opacity, hallK.has(m) ? 'K' + hallK.get(m) : '', hallB.has(m) ? 'B' : ''].join('|');
+  const canon = new Map(), bk = new Map(), rest = [], sph = new THREE.Sphere(), roots = [scene, walkOnly, birdOnly];
+  const clsOf = r => r < 0.35 ? 0 : r < 1.5 ? 1 : 2;
+  scene.traverse(o => {
+    if (!o.isMesh || hold.has(o)) return;
+    let root = null, shown = true; for (let p = o; p; p = p.parent) { if (!p.visible && p !== walkOnly && p !== birdOnly) shown = false; if (!root && (p === walkOnly || p === birdOnly || p === scene)) root = p; }
+    const m = o.material, g = o.geometry;
+    if (o.isInstancedMesh) { if (!o.boundingSphere) o.computeBoundingSphere(); sph.copy(o.boundingSphere).applyMatrix4(o.matrixWorld); }
+    else { if (!g.boundingSphere) g.computeBoundingSphere(); sph.copy(g.boundingSphere).applyMatrix4(o.matrixWorld); }
+    const info = { x: sph.center.x, y: sph.center.y, z: sph.center.z, r: sph.radius };
+    const plain = !o.isInstancedMesh && shown && !Array.isArray(m) && (m.isMeshStandardMaterial || m.isMeshBasicMaterial) && !m.transparent && !m.vertexColors && m.onBeforeCompile === defOBC && o.renderOrder === 0 && o.frustumCulled && g.attributes.position && (m.isMeshBasicMaterial || g.attributes.normal) && (!m.map || g.attributes.uv) && g.drawRange.start === 0 && g.drawRange.count === Infinity && o.layers.mask === 1;
+    if (!plain) { if (shown) rest.push([o, info]); return; }
+    if (!g.boundingBox) g.computeBoundingBox(); const bs = g.boundingBox, flat = Math.min(bs.max.x - bs.min.x, bs.max.y - bs.min.y, bs.max.z - bs.min.z) < 0.004;
+    const k = matK(m); if (!canon.has(k)) canon.set(k, m);
+    const cm = flat ? m : canon.get(k), cls = clsOf(info.r), zone = zoneOf(info.x, info.z);
+    const key = [cm.uuid, roots.indexOf(root), zone, cls, Math.floor(info.x / 20), Math.floor(info.z / 20)].join('/');
+    let b = bk.get(key); if (!b) bk.set(key, b = { mat: cm, root, zone, cls, list: [] }); b.list.push([o, info]);
+  });
+  const _n = new THREE.Vector3(), _p = new THREE.Vector3(), nm = new THREE.Matrix3(), mw = new THREE.Matrix4();
+  bk.forEach(b => {
+    if (b.list.length < 2) { const [o, info] = b.list[0]; o.material = b.mat; rest.push([o, info, b.cls, b.zone]); return; }
+    let nv = 0, ni = 0; b.list.forEach(([o]) => { const g = o.geometry, c = g.attributes.position.count; nv += c; ni += g.index ? g.index.count : c; });
+    const useN = !b.mat.isMeshBasicMaterial, useU = !!b.mat.map, P = new Float32Array(nv * 3), N = useN ? new Float32Array(nv * 3) : null, U = useU ? new Float32Array(nv * 2) : null, I = new Uint32Array(ni);
+    const inv = new THREE.Matrix4().copy(b.root.matrixWorld).invert(); let v = 0, q = 0;
+    b.list.forEach(([o]) => {
+      const g = o.geometry, pa = g.attributes.position, na = g.attributes.normal, ua = g.attributes.uv, ix = g.index, c = pa.count;
+      mw.multiplyMatrices(inv, o.matrixWorld); nm.getNormalMatrix(mw); const flip = mw.determinant() < 0;
+      for (let i = 0; i < c; i++) {
+        _p.fromBufferAttribute(pa, i).applyMatrix4(mw); P[(v + i) * 3] = _p.x; P[(v + i) * 3 + 1] = _p.y; P[(v + i) * 3 + 2] = _p.z;
+        if (useN) { _n.fromBufferAttribute(na, i).applyMatrix3(nm).normalize(); N[(v + i) * 3] = _n.x; N[(v + i) * 3 + 1] = _n.y; N[(v + i) * 3 + 2] = _n.z; }
+        if (useU) { U[(v + i) * 2] = ua.getX(i); U[(v + i) * 2 + 1] = ua.getY(i); }
+      }
+      const tri = ix ? ix.count : c, at = j => ix ? ix.getX(j) : j;
+      for (let j = 0; j < tri; j += 3) { const a = at(j), bb = at(j + 1), d = at(j + 2); I[q++] = v + a; I[q++] = v + (flip ? d : bb); I[q++] = v + (flip ? bb : d); }
+      v += c; o.removeFromParent();                                              // 뗀 원본은 클릭 판정에만 남음
+    });
+    const G = new THREE.BufferGeometry(); G.setAttribute('position', new THREE.BufferAttribute(P, 3)); if (N) G.setAttribute('normal', new THREE.BufferAttribute(N, 3)); if (U) G.setAttribute('uv', new THREE.BufferAttribute(U, 2)); G.setIndex(new THREE.BufferAttribute(I, 1)); G.computeBoundingSphere();
+    const me = new THREE.Mesh(G, b.mat); me.matrixAutoUpdate = false; b.root.add(me); me.updateMatrixWorld(true);
+    sph.copy(G.boundingSphere).applyMatrix4(me.matrixWorld);
+    CULL.push({ m: me, x: sph.center.x, y: sph.center.y, z: sph.center.z, r: sph.radius, cls: b.cls, zone: b.zone });
+  });
+  rest.forEach(([o, s, cls, zone]) => { const cl = cls === undefined ? (o.isInstancedMesh ? (s.r > 25 ? 2 : 1) : clsOf(s.r)) : cls; CULL.push({ m: o, x: s.x, y: s.y, z: s.z, r: s.r, cls: cl, zone: zone === undefined ? zoneOf(s.x, s.z) : zone, inst: !!o.isInstancedMesh }); });
+  const prune = []; scene.traverse(o => { if (o.isGroup && !o.children.length && !hold.has(o) && o !== walkOnly && o !== birdOnly) prune.push(o); }); prune.forEach(o => { let p = o; while (p && p.isGroup && !p.children.length && p !== walkOnly && p !== birdOnly && !hold.has(p)) { const q = p.parent; p.removeFromParent(); p = q; } });
+  scene.traverse(o => { if (!hold.has(o) && o !== walkOnly && o !== birdOnly && o !== scene && (o.isMesh || o.isSprite || o.isGroup)) { o.updateMatrix(); o.matrixAutoUpdate = false; } });
+  const ts = new Set(); scene.traverse(o => [].concat(o.material || []).forEach(m => ['map', 'emissiveMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap'].forEach(k => m[k] && ts.add(m[k]))));
+  [kinTex, waveTex, sphereCanvas].forEach(t => ts.delete(t)); ts.forEach(t => { if (LOW && t.anisotropy > 4) t.anisotropy = 4; TEXQ.push(t); });
+  if (LOW) scene.traverse(o => { if (o.isSpotLight || o.isPointLight) { o.getWorldPosition(_cq0); ZL.push([o, zoneOf(_cq0.x, _cq0.z)]); } });   // 고화질은 조명을 그대로 둠
+  renderer.compile(scene, camera);                                               // 걷다가 멈칫하지 않게 처음에 다 준비
+  if (LOW) { const st = [[1, 0, 1], [0, 1, 1], [0, 0, 1], [1, 1, 1]]; let i = 0; const next = () => { if (i >= st.length) return; if (renderer.xr.isPresenting) { i = st.length; return; } const [h, m] = st[i++]; const old = ZL.map(([L]) => L.visible); ZL.forEach(([L, z]) => { L.visible = z === 0 ? !!h : z === 2 ? !!m : true; }); renderer.compile(scene, camera); ZL.forEach(([L], j) => { L.visible = old[j]; }); setTimeout(next, 700); }; setTimeout(next, 4000); }   // 구역별 조명 조합도 미리 준비
+})();
+const _cq = new THREE.Vector3(); let cullFrame = 0, cullX = 1e9, cullY = 1e9, cullZ = 1e9, cullMode = '';
+function updateCull(force) {
+  if (!OPT) return;
+  camera.getWorldPosition(_cq);
+  if (!force && ++cullFrame % 30 && mode === cullMode && Math.abs(_cq.x - cullX) + Math.abs(_cq.y - cullY) + Math.abs(_cq.z - cullZ) < 1) return;
+  cullX = _cq.x; cullY = _cq.y; cullZ = _cq.z; cullMode = mode;
+  const zone = zoneOf(_cq.x, _cq.z), bird = mode === 'bird', k = bird ? 3 : 1;
+  const hallLit = bird || _cq.z < 9, mhLit = bird || (_cq.z > 20 && _cq.x < 30);   // 빛이 닿지 않는 곳에 있을 때만 그쪽 조명을 끔
+  ZL.forEach(([L, z]) => { L.visible = z === 0 ? hallLit : z === 2 ? mhLit : true; });
+  for (let i = 0; i < CULL.length; i++) { const e = CULL[i]; let on = true;
+    if (e.cls < 2) {
+      if (!bird && zone + e.zone === 2 && zone !== 1) on = false;                // 전시장 ↔ 다목적홀: 벽 너머 작은 물체
+      else if (!e.inst) { const d = Math.hypot(e.x - _cq.x, e.y - _cq.y, e.z - _cq.z) - e.r; on = d < (e.cls === 0 ? 55 : 120) * k; }
+    }
+    e.m.visible = on; }
+}
+let last = performance.now(), kinT = 0, miniAt = 0, frameN = 0;
 const perf = { n: 0, t0: 0, done: LOW };                                     // 고화질이 버거우면 (처음 8초 평균 20fps 미만) 저화질 권함
 renderer.setAnimationLoop((now) => {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -1646,17 +1732,20 @@ renderer.setAnimationLoop((now) => {
     if (f || r) { stopTour(); const d = camera.position.distanceTo(controls.target), sp = Math.max(8, d * 0.7) * dt, fw = new THREE.Vector3(); camera.getWorldDirection(fw); fw.y = 0; fw.normalize(); const rt = new THREE.Vector3(-fw.z, 0, fw.x), mv = fw.multiplyScalar(f * sp).add(rt.multiplyScalar(r * sp)); controls.target.add(mv); camera.position.add(mv); }
   }
   if (mode === 'bird') controls.update();
-  KIN.forEach(m => { const [i, j] = m.userData.ij, a = kinW(i, j, kinT); m.position.z = 0.1 + 0.09 * Math.sin(a); m.rotation.x = 0.32 * Math.cos(a); });   // 키네틱 판 움직임
-  kinT += dt; if (Math.floor(kinT * 12) !== Math.floor((kinT - dt) * 12)) drawKinetic(kinT);
-  if (Math.floor(kinT * 4) !== Math.floor((kinT - dt) * 4)) drawSphere(kinT);
-  if (Math.floor(kinT * 15) !== Math.floor((kinT - dt) * 15)) drawWave(kinT);
-  HEADS.forEach(h => { h.g.rotation.z = Math.sin(kinT * 0.6 + h.ph) * 0.14; h.g.rotation.x = Math.cos(kinT * 0.45 + h.ph) * 0.1; });
+  camera.getWorldPosition(_cq); const nowZone = zoneOf(_cq.x, _cq.z), bird = mode === 'bird', kinOn = !OPT || bird || Math.hypot(_cq.x - MG.cx, _cq.z - MG.cz) < 70, hallOn = !OPT || bird || nowZone !== 2, stageOn = !OPT || bird || nowZone === 2;   // 안 보이는 곳 움직임은 쉼
+  if (kinOn) KIN.forEach(m => { const [i, j] = m.userData.ij, a = kinW(i, j, kinT); m.position.z = 0.1 + 0.09 * Math.sin(a); m.rotation.x = 0.32 * Math.cos(a); });   // 키네틱 판 움직임
+  kinT += dt; if (kinOn && Math.floor(kinT * 12) !== Math.floor((kinT - dt) * 12)) drawKinetic(kinT);
+  if (hallOn && Math.floor(kinT * 4) !== Math.floor((kinT - dt) * 4)) drawSphere(kinT);
+  if (stageOn && Math.floor(kinT * 15) !== Math.floor((kinT - dt) * 15)) drawWave(kinT);
+  if (stageOn) HEADS.forEach(h => { h.g.rotation.z = Math.sin(kinT * 0.6 + h.ph) * 0.14; h.g.rotation.x = Math.cos(kinT * 0.45 + h.ph) * 0.1; });
   PIX.forEach((t, i) => t.offset.y = (kinT * 0.01 * (i % 3 + 1)) % 1);
   SPH.rotation.y += dt * 0.4;
   COAI.forEach((c, i) => c.rotation.z = Math.sin(now / 900 + i) * 0.03);
   FLY.position.y = 5.6 + Math.sin(now / 1100) * 0.25; FLY.rotation.y += dt * 0.15; coaiTurn();
   if (mode === 'walk') sprites.forEach(s => s.visible = Math.hypot(s.position.x - player.x, s.position.z - player.z) < 32); else sprites.forEach(s => s.visible = !s.userData.extra);   // 조감에선 같은 번호는 한 번만
-  drawMini();
+  if (!OPT || now - miniAt > 100) { miniAt = now; drawMini(); }                  // 미니맵은 1초에 10번이면 충분
+  updateCull();
+  if (OPT && TEXQ.length && !document.getElementById('load') && ++frameN % 2 === 0) { const t = TEXQ.pop(); if (t.image && t.image.complete !== false) renderer.initTexture(t); else TEXQ.unshift(t); }   // 그림을 조금씩 미리 올려 고개 돌릴 때 끊김 방지
   if (composer && !renderer.xr.isPresenting) composer.render(); else renderer.render(scene, camera);
 });
 const hideLoad = () => { const l = document.getElementById('load'); if (l) { l.style.opacity = 0; setTimeout(() => l.remove(), 700); } };

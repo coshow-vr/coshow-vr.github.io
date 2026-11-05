@@ -76,12 +76,39 @@ button.cy{background:linear-gradient(90deg,#1b6dff,#22c8ff)}
  #hint{font-size:11px}
  #cap{top:calc(134px + env(safe-area-inset-top));font-size:13px}
 }
+/* 홈페이지 모드: 다른 페이지 칸(iframe) 안에서만. html.emb = 칸 안 · boxed = 전체 화면 아님 · cover = 시작 전 */
+#cover,#boxBtns{display:none}
+html.emb.cover,html.emb.cover body{touch-action:auto}
+.emb.cover #cover{display:flex;position:fixed;inset:0;z-index:20;flex-direction:column;align-items:center;justify-content:center;gap:clamp(5px,2.4vh,14px);text-align:center;padding:8px;background:radial-gradient(ellipse at center,rgba(11,20,64,.88) 25%,rgba(11,20,64,.55) 85%),url(img/cover_home.jpg) center/cover #0b1440}
+.emb.cover #load{display:none}
+#cover img{width:clamp(34px,13vh,78px);height:auto;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))}
+#cover b{font-size:clamp(15px,5.4vh,30px);font-weight:700;letter-spacing:-.4px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+#cover span{font-size:clamp(10px,2.8vh,15px);font-weight:500;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+#cover .row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+#cover button,#cover a{font:inherit;font-weight:700;font-size:clamp(13px,3.2vh,16px);padding:clamp(7px,2vh,13px) clamp(14px,3vw,24px);border-radius:999px;color:#fff;text-decoration:none;background:rgba(11,20,64,.82);border:1px solid rgba(255,255,255,.45);box-shadow:0 3px 14px rgba(0,0,0,.35);cursor:pointer;touch-action:manipulation}
+#cover .go{background:linear-gradient(90deg,#1b6dff,#22c8ff);border-color:transparent}
+#cover small{font-size:clamp(9px,2.2vh,12px);font-weight:500;opacity:.85}
+.emb #boxBtns{display:flex;position:fixed;z-index:4;gap:6px;left:50%;top:12px;transform:translateX(-50%)}
+.boxed #boxBtns{left:auto;right:12px;transform:none}
+.emb:not(.boxed) #bMenu{display:none}
+.boxed header,.boxed #mini,.boxed #modes,.boxed #zones{display:none}
+.boxed #note{top:16px}
+.boxed #hint{bottom:14px}
+.boxed #cap{top:56px}
+.boxed.menu #modes,.boxed.menu #zones{display:flex}
+.boxed.menu #modes{top:56px;bottom:auto;left:auto;right:12px;flex-direction:column;align-items:flex-end;flex-wrap:nowrap;max-height:calc(100vh - 110px);overflow:auto}
+.boxed.menu #hint{display:none}
+.boxed #boxBtns button{background:rgba(11,20,64,.86)}
+.boxed.menu #bMenu{background:#fff;color:var(--navy)}
 </style>
+<script>(function(){var q=new URLSearchParams(location.search).get('embed'),e=self!==top;if(q==='1')e=true;if(q==='0')e=false;window.CVR_EMB=e;if(e)document.documentElement.classList.add('emb','boxed','cover');})();</script>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
 </script>
 </head>
 <body>
+<div id="cover"><img src="badge.png" alt=""><b>2026 CO-SHOW 가상 투어</b><span>2026. 11. 18.(수) ~ 21.(토) · 광주 김대중컨벤션센터</span><div class="row" id="coverBtns"></div><small>1027 전시장 시안 기준 개략 배치 · 실제와 다를 수 있음</small></div>
+<div id="boxBtns"><button id="bMenu">☰ 메뉴</button><button id="bFs">⛶ 전체 화면</button></div>
 <div id="app"></div>
 <header><img src="badge.png" alt=""><div><b>2026 CO-SHOW 가상 투어</b><span>2026. 11. 18.(수) ~ 21.(토) · 광주 김대중컨벤션센터</span></div></header>
 <div id="note">1027 전시장 시안 기준 개략 배치 · 실제와 다를 수 있음</div>
@@ -112,6 +139,32 @@ button.cy{background:linear-gradient(90deg,#1b6dff,#22c8ff)}
 <div id="lb"><img alt=""></div>
 <div id="load"><div><img src="badge.png" alt=""><br>공간을 짓는 중…<small>처음 한 번은 조금 걸려요</small></div></div>
 
-<script type="module" src="tour.js?v=32"></script>
+<script>
+(function(){
+  var d=document.documentElement,started=false;
+  function start(){if(started)return;started=true;d.classList.remove('cover');var s=document.createElement('script');s.type='module';s.src='tour.js?v=34';document.body.appendChild(s);}
+  if(!window.CVR_EMB){start();return;}                                        // 주소로 바로 열면 지금까지와 같음
+  var page=location.pathname,box=document.getElementById('coverBtns'),bFs=document.getElementById('bFs');
+  function fsEl(){return document.fullscreenElement||document.webkitFullscreenElement;}
+  function openNew(){return window.open(page,'_blank');}
+  function goFs(ok,fail){fail=fail||openNew;var r=d.requestFullscreen||d.webkitRequestFullscreen;if(!r){fail();return;}try{var p=r.call(d);if(p&&p.then)p.then(ok||function(){},fail);else if(ok)ok();}catch(e){fail();}}
+  function exitFs(){(document.exitFullscreen||document.webkitExitFullscreen).call(document);}
+  if(innerWidth<=600||matchMedia('(pointer:coarse)').matches||!(document.fullscreenEnabled||document.webkitFullscreenEnabled)){
+    box.innerHTML='<a class="go" target="_blank" rel="noopener" href="'+page+'">▶ 새 창에서 VR 투어 시작</a>';   // 폰·태블릿: 칸 안에서 3D를 돌리지 않음
+  }else{
+    box.innerHTML='<button class="go" id="cvStart">▶ VR 투어 시작</button><button id="cvFull">⛶ 전체 화면으로 시작</button>';
+    document.getElementById('cvStart').onclick=start;
+    document.getElementById('cvFull').onclick=function(){goFs(start,function(){if(!openNew())start();});};   // 거부되면 새 창만, 새 창도 막히면 칸 안에서 시작
+  }
+  bFs.onclick=function(){fsEl()?exitFs():goFs();};
+  function closeMenu(){d.classList.remove('menu');}
+  document.getElementById('bMenu').onclick=function(){d.classList.toggle('menu');};
+  document.getElementById('modes').addEventListener('click',function(e){if(e.target.closest('#bBird,#bWalk,#bTour,#bGal'))closeMenu();});
+  document.getElementById('selB').addEventListener('change',closeMenu);
+  document.getElementById('zones').addEventListener('click',function(e){if(e.target.closest('button'))closeMenu();});
+  function onFs(){var f=!!fsEl();d.classList.toggle('boxed',!f);closeMenu();bFs.textContent=f?'⤡ 작게 보기':'⛶ 전체 화면';dispatchEvent(new Event('resize'));}
+  document.addEventListener('fullscreenchange',onFs);document.addEventListener('webkitfullscreenchange',onFs);
+})();
+</script>
 </body>
 </html>
